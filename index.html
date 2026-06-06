@@ -21,21 +21,24 @@
     <link rel="icon" href="./icon.png">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-/* Animation for promo modal load-in */
-#epsilon-promo-modal:not(.hidden) .glass {
-    animation: promoPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
 
-@keyframes promoPop {
-    from {
-        opacity: 0;
-        transform: scale(0.9) translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
-}
+        /* Animation for promo modal load-in */
+        #epsilon-promo-modal:not(.hidden) .glass {
+            animation: promoPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes promoPop {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
         /* The Chat Window */
         #ai-modal {
             transition: opacity 0.2s ease, transform 0.2s ease;
@@ -300,6 +303,12 @@
                     <i data-lucide="building" class="w-5 h-5"></i>
                     <span>Facilities</span>
                 </button>
+                <button
+                    class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-gray-600"
+                    data-page="deductions">
+                    <i data-lucide="minus-circle" class="w-5 h-5"></i>
+                    <span>Deductions</span>
+                </button>
             </nav>
 
             <div class="mt-4 pt-4 border-t border-gray-200">
@@ -418,7 +427,8 @@
                             <p class="text-gray-500 text-sm font-medium">Deliveries</p>
                             <h3 id="statDeliveries" class="text-3xl font-bold text-gray-800 mt-1">0</h3>
                         </div>
-                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-600">
+                        <div
+                            class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-600">
                             <i data-lucide="truck" class="w-6 h-6"></i>
                         </div>
                     </div>
@@ -427,7 +437,8 @@
                             <p class="text-gray-500 text-sm font-medium">Employees</p>
                             <h3 id="statEmployees" class="text-3xl font-bold text-gray-800 mt-1">0</h3>
                         </div>
-                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
+                        <div
+                            class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
                             <i data-lucide="briefcase" class="w-6 h-6"></i>
                         </div>
                     </div>
@@ -438,6 +449,24 @@
                         </div>
                         <div class="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center text-pink-600">
                             <i data-lucide="building" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+                    <div class="glass p-6 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium">Total Deductions</p>
+                            <h3 id="statDeductions" class="text-3xl font-bold text-gray-800 mt-1">$0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-red-600">
+                            <i data-lucide="minus-circle" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+                    <div class="glass p-6 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium">Inventory Value</p>
+                            <h3 id="statInventoryValue" class="text-3xl font-bold text-gray-800 mt-1">$0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+                            <i data-lucide="box" class="w-6 h-6"></i>
                         </div>
                     </div>
                 </div>
@@ -592,6 +621,34 @@
                 </div>
             </div>
 
+            <div id="deductionsSection" class="section hidden">
+                <div class="glass p-6 rounded-2xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Deductions</h2>
+                        <button onclick="showDeductionModal()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Add Deduction
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-gray-200 text-sm text-gray-500">
+                                    <th class="py-3 px-4">Description</th>
+                                    <th class="py-3 px-4">Amount</th>
+                                    <th class="py-3 px-4">Frequency</th>
+                                    <th class="py-3 px-4">Payee</th>
+                                    <th class="py-3 px-4">Email</th>
+                                    <th class="py-3 px-4">Phone</th>
+                                    <th class="py-3 px-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="deductionsList" class="text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -698,6 +755,7 @@
                 if (page === 'deliveries') loadDeliveries();
                 if (page === 'employees') loadEmployees();
                 if (page === 'facilities') loadFacilities();
+                if (page === 'deductions') loadDeductions();
             });
         });
 
@@ -813,12 +871,28 @@
             const { count: empCount } = await supabaseClient.from('employees').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id);
             const { count: facCount } = await supabaseClient.from('facilities').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id);
 
+            // Calculate total deductions
+            const { data: deductions } = await supabaseClient.from('deductions').select('amount').eq('user_id', currentUser.id);
+            let totalDeductions = 0;
+            if (deductions && deductions.length > 0) {
+                totalDeductions = deductions.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+            }
+
+            // Calculate inventory value (sum of stock * price for all products)
+            const { data: products } = await supabaseClient.from('products').select('price, stock').eq('user_id', currentUser.id);
+            let inventoryValue = 0;
+            if (products && products.length > 0) {
+                inventoryValue = products.reduce((sum, p) => sum + ((parseFloat(p.price) || 0) * (parseInt(p.stock) || 0)), 0);
+            }
+
             document.getElementById('statProducts').textContent = prodCount || 0;
             document.getElementById('statServices').textContent = servCount || 0;
             document.getElementById('statCustomers').textContent = custCount || 0;
             document.getElementById('statDeliveries').textContent = delivCount || 0;
             document.getElementById('statEmployees').textContent = empCount || 0;
             document.getElementById('statFacilities').textContent = facCount || 0;
+            document.getElementById('statDeductions').textContent = '$' + totalDeductions.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('statInventoryValue').textContent = '$' + inventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             const dummyRevenue = ((prodCount || 0) * 150) + ((servCount || 0) * 500);
             document.getElementById('statRevenue').textContent = '$' + dummyRevenue.toLocaleString();
 
@@ -1305,6 +1379,92 @@
             }
         }
 
+        async function loadDeductions() {
+            const { data: deductions, error } = await supabaseClient.from('deductions').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+            const tbody = document.getElementById('deductionsList');
+            tbody.innerHTML = '';
+
+            if (error) {
+                tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-red-500">Error loading deductions. Did you create the SQL table?</td></tr>';
+                return;
+            }
+            if (!deductions || deductions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400">No deductions found.</td></tr>';
+                return;
+            }
+            deductions.forEach(d => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-gray-100 hover:bg-gray-50';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-medium text-gray-800">${d.description}</td>
+                    <td class="py-3 px-4 text-gray-600">$${parseFloat(d.amount).toFixed(2)}</td>
+                    <td class="py-3 px-4 text-gray-600">${d.frequency}</td>
+                    <td class="py-3 px-4 text-gray-600">${d.payee_name}</td>
+                    <td class="py-3 px-4 text-gray-600">${d.payee_email}</td>
+                    <td class="py-3 px-4 text-gray-600">${d.payee_phone}</td>
+                    <td class="py-3 px-4 flex gap-2">
+                        <button onclick="deleteDeduction(${d.id})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function showDeductionModal() {
+            modalTitle.innerText = "Add Deduction";
+            modalContent.innerHTML = `
+                <form onsubmit="handleDeductionSubmit(event)" class="space-y-4">
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Description</label><input name="description" type="text" placeholder="e.g., Office Rent" class="input-field" required></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Amount ($)</label><input name="amount" type="number" step="0.01" class="input-field" required></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+                        <select name="frequency" class="input-field" required>
+                            <option value="">Select frequency</option>
+                            <option value="Daily">Daily</option>
+                            <option value="Weekly">Weekly</option>
+                            <option value="Monthly">Monthly</option>
+                            <option value="Quarterly">Quarterly</option>
+                            <option value="Yearly">Yearly</option>
+                            <option value="One-time">One-time</option>
+                        </select>
+                    </div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Payee Name</label><input name="payee_name" type="text" class="input-field" required></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Payee Email</label><input name="payee_email" type="email" class="input-field"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Payee Phone</label><input name="payee_phone" type="tel" class="input-field"></div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg">Save Deduction</button>
+                </form>
+            `;
+            modalContainer.classList.remove('hidden');
+        }
+
+        async function handleDeductionSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const { error } = await supabaseClient.from('deductions').insert([{
+                user_id: currentUser.id,
+                description: formData.get('description'),
+                amount: parseFloat(formData.get('amount')),
+                frequency: formData.get('frequency'),
+                payee_name: formData.get('payee_name'),
+                payee_email: formData.get('payee_email'),
+                payee_phone: formData.get('payee_phone')
+            }]);
+            if (error) alert(error.message);
+            else {
+                closeModal();
+                loadDeductions();
+                loadDashboardData();
+            }
+        }
+
+        async function deleteDeduction(id) {
+            if (confirm("Delete this deduction?")) {
+                await supabaseClient.from('deductions').delete().eq('id', id);
+                loadDeductions();
+                loadDashboardData();
+            }
+        }
+
         const toggleBtn = document.getElementById('ai-toggle-btn');
         const closeBtn = document.getElementById('ai-close-btn');
         const modal = document.getElementById('ai-modal');
@@ -1443,96 +1603,106 @@
         checkSession();
     </script>
     <!-- Epsilon Website Promo Dialog -->
-<div id="epsilon-promo-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black bg-opacity-60 p-4 backdrop-blur-sm">
-    <div class="glass max-w-md w-full p-6 rounded-2xl bg-white shadow-2xl transform transition-all scale-95 duration-300">
-        <!-- Step 1: Initial Question -->
-        <div id="promo-step-1" class="text-center">
-            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mx-auto mb-4">
-                <i data-lucide="globe" class="w-6 h-6"></i>
+    <div id="epsilon-promo-modal"
+        class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black bg-opacity-60 p-4 backdrop-blur-sm">
+        <div
+            class="glass max-w-md w-full p-6 rounded-2xl bg-white shadow-2xl transform transition-all scale-95 duration-300">
+            <!-- Step 1: Initial Question -->
+            <div id="promo-step-1" class="text-center">
+                <div
+                    class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mx-auto mb-4">
+                    <i data-lucide="globe" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Do you have a website for your business?</h3>
+                <p class="text-sm text-gray-500 mb-6">Let us know to optimize your Epsilon Azure dashboard experience.
+                </p>
+                <div class="flex gap-4 justify-center">
+                    <button id="promo-yes-btn"
+                        class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2.5 px-6 rounded-xl transition">
+                        Yes, I do
+                    </button>
+                    <button id="promo-no-btn"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-xl transition shadow-md shadow-blue-200">
+                        No, I don't
+                    </button>
+                </div>
             </div>
-            <h3 class="text-xl font-bold text-gray-800 mb-2">Do you have a website for your business?</h3>
-            <p class="text-sm text-gray-500 mb-6">Let us know to optimize your Epsilon Azure dashboard experience.</p>
-            <div class="flex gap-4 justify-center">
-                <button id="promo-yes-btn" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2.5 px-6 rounded-xl transition">
-                    Yes, I do
-                </button>
-                <button id="promo-no-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-xl transition shadow-md shadow-blue-200">
-                    No, I don't
-                </button>
-            </div>
-        </div>
 
-        <!-- Step 2: Pitch Section (Hidden by default) -->
-        <div id="promo-step-2" class="text-center hidden">
-            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 mx-auto mb-4">
-                <i data-lucide="sparkles" class="w-6 h-6"></i>
-            </div>
-            <h3 class="text-xl font-bold text-gray-800 mb-2">Grow Your Brand Online!</h3>
-            <p class="text-sm text-gray-500 mb-6">Get a professional, high-performance website built directly inside the Epsilon ecosystem.</p>
-            <div class="flex flex-col gap-3">
-                <a href="https://epsilon-panel.vercel.app" target="_blank" id="promo-order-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition text-center shadow-md shadow-blue-200 flex items-center justify-center gap-2">
-                    <span>Order in Epsilon Panel</span>
-                    <i data-lucide="external-link" class="w-4 h-4"></i>
-                </a>
-                <button id="promo-close-btn" class="text-sm text-gray-400 hover:text-gray-600 transition underline py-1">
-                    Maybe later
-                </button>
+            <!-- Step 2: Pitch Section (Hidden by default) -->
+            <div id="promo-step-2" class="text-center hidden">
+                <div
+                    class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 mx-auto mb-4">
+                    <i data-lucide="sparkles" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Grow Your Brand Online!</h3>
+                <p class="text-sm text-gray-500 mb-6">Get a professional, high-performance website built directly inside
+                    the Epsilon ecosystem.</p>
+                <div class="flex flex-col gap-3">
+                    <a href="https://epsilon-panel.vercel.app" target="_blank" id="promo-order-btn"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition text-center shadow-md shadow-blue-200 flex items-center justify-center gap-2">
+                        <span>Order in Epsilon Panel</span>
+                        <i data-lucide="external-link" class="w-4 h-4"></i>
+                    </a>
+                    <button id="promo-close-btn"
+                        class="text-sm text-gray-400 hover:text-gray-600 transition underline py-1">
+                        Maybe later
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-<script>
-  // Epsilon Promo Dialog Controller
-function initEpsilonPromo() {
-    const promoModal = document.getElementById('epsilon-promo-modal');
-    const step1 = document.getElementById('promo-step-1');
-    const step2 = document.getElementById('promo-step-2');
-    
-    const yesBtn = document.getElementById('promo-yes-btn');
-    const noBtn = document.getElementById('promo-no-btn');
-    const closeBtn = document.getElementById('promo-close-btn');
-    const orderBtn = document.getElementById('promo-order-btn');
+    <script>
+        // Epsilon Promo Dialog Controller
+        function initEpsilonPromo() {
+            const promoModal = document.getElementById('epsilon-promo-modal');
+            const step1 = document.getElementById('promo-step-1');
+            const step2 = document.getElementById('promo-step-2');
 
-    // Check localStorage to see if they already answered 'yes' or bought one
-    const hasWebsiteConfigured = localStorage.getItem('epsilon_has_business_website');
+            const yesBtn = document.getElementById('promo-yes-btn');
+            const noBtn = document.getElementById('promo-no-btn');
+            const closeBtn = document.getElementById('promo-close-btn');
+            const orderBtn = document.getElementById('promo-order-btn');
 
-    if (hasWebsiteConfigured === 'true') {
-        return; // Say less, don't show it again
-    }
+            // Check localStorage to see if they already answered 'yes' or bought one
+            const hasWebsiteConfigured = localStorage.getItem('epsilon_has_business_website');
 
-    // Trigger the modal to open
-    promoModal.classList.remove('hidden');
-    if (window.lucide) window.lucide.createIcons(); // Hydrate icons inside modal
+            if (hasWebsiteConfigured === 'true') {
+                return; // Say less, don't show it again
+            }
 
-    // User clicks "Yes, I do"
-    yesBtn.addEventListener('click', () => {
-        localStorage.setItem('epsilon_has_business_website', 'true');
-        promoModal.classList.add('hidden');
-    });
+            // Trigger the modal to open
+            promoModal.classList.remove('hidden');
+            if (window.lucide) window.lucide.createIcons(); // Hydrate icons inside modal
 
-    // User clicks "No, I don't" -> Show Pitch
-    noBtn.addEventListener('click', () => {
-        step1.classList.add('hidden');
-        step2.classList.remove('hidden');
-        if (window.lucide) window.lucide.createIcons();
-    });
+            // User clicks "Yes, I do"
+            yesBtn.addEventListener('click', () => {
+                localStorage.setItem('epsilon_has_business_website', 'true');
+                promoModal.classList.add('hidden');
+            });
 
-    // User decides to order -> Save status and close modal
-    orderBtn.addEventListener('click', () => {
-        localStorage.setItem('epsilon_has_business_website', 'true'); // Prevents annoying re-popups after redirect
-        promoModal.classList.add('hidden');
-    });
+            // User clicks "No, I don't" -> Show Pitch
+            noBtn.addEventListener('click', () => {
+                step1.classList.add('hidden');
+                step2.classList.remove('hidden');
+                if (window.lucide) window.lucide.createIcons();
+            });
 
-    // Close on "Maybe later"
-    closeBtn.addEventListener('click', () => {
-        promoModal.classList.add('hidden');
-    });
-}
+            // User decides to order -> Save status and close modal
+            orderBtn.addEventListener('click', () => {
+                localStorage.setItem('epsilon_has_business_website', 'true'); // Prevents annoying re-popups after redirect
+                promoModal.classList.add('hidden');
+            });
 
-// Call this inside your existing checkSession setup or page load listener
-// For example, trigger it after a user successfully logs in:
-setTimeout(initEpsilonPromo, 1500); // 1.5s delay so it doesn't slap them instantly on load
-</script>
+            // Close on "Maybe later"
+            closeBtn.addEventListener('click', () => {
+                promoModal.classList.add('hidden');
+            });
+        }
+
+        // Call this inside your existing checkSession setup or page load listener
+        // For example, trigger it after a user successfully logs in:
+        setTimeout(initEpsilonPromo, 1500); // 1.5s delay so it doesn't slap them instantly on load
+    </script>
 </body>
 
 </html>
