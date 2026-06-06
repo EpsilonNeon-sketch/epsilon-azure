@@ -4,27 +4,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Epsilon Azure | Business Management & POS</title>
+    <title>Epsilon Azure | Business Manager</title>
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <link rel="icon" href="./icon.png">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+        /* The Chat Window */
+        #ai-modal {
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Draggable Header Cursor */
+        #ai-header {
+            cursor: move;
+            user-select: none;
+        }
+
+        /* Scrollbar Styling */
+        .chat-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .chat-scroll::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+
+        .chat-scroll::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        /* Message Bubbles */
+        .msg-bubble {
+            max-width: 80%;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        /* Typing Indicator Animation */
+        .typing-dot {
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes typing {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0);
+            }
+
+            40% {
+                transform: scale(1);
+            }
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f9ff;
-            /* Sky-50 */
+            background-color: #f8fafc;
             color: #1e293b;
-            /* Slate-800 */
         }
 
         .glass {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(56, 189, 248, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.2);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
         }
 
@@ -35,9 +106,9 @@
             width: 100%;
             height: 100%;
             z-index: -1;
-            background-image: radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.15) 0, transparent 50%),
+            background-image: radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0, transparent 50%),
                 radial-gradient(at 100% 100%, rgba(37, 99, 235, 0.15) 0, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(224, 242, 254, 0.2) 0, transparent 50%);
+                radial-gradient(at 100% 0%, rgba(147, 197, 253, 0.1) 0, transparent 50%);
         }
 
         .page {
@@ -70,9 +141,9 @@
             top: 0;
             height: 100vh;
             width: 260px;
-            background: rgba(255, 255, 255, 0.98);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            border-right: 1px solid rgba(226, 232, 240, 0.8);
+            border-right: 1px solid rgba(59, 130, 246, 0.2);
             transition: transform 0.3s ease;
             z-index: 100;
             overflow-y: auto;
@@ -82,13 +153,14 @@
             transform: translateX(-100%);
         }
 
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
         .main-content {
             margin-left: 260px;
             transition: margin-left 0.3s ease;
             padding: 2rem;
-            height: calc(100vh - 0rem);
-            /* Full height for POS */
-            overflow-y: auto;
         }
 
         .main-content.expanded {
@@ -100,18 +172,18 @@
             top: 1rem;
             left: 1rem;
             z-index: 101;
-            background: #0284c7;
+            background: #3b82f6;
             border: none;
             padding: 0.75rem;
             border-radius: 0.5rem;
             cursor: pointer;
             transition: all 0.3s ease;
             color: white;
-            box-shadow: 0 4px 6px rgba(2, 132, 199, 0.2);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .menu-toggle:hover {
-            background: #0369a1;
+            background: #2563eb;
         }
 
         .sidebar-overlay {
@@ -130,60 +202,15 @@
             width: 100%;
             border-radius: 0.5rem;
             padding: 0.75rem 1rem;
-            background-color: #f0f9ff;
-            border: 1px solid #bae6fd;
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
             transition: all 0.2s;
         }
 
         .input-field:focus {
             outline: none;
-            border-color: #0284c7;
-            box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.1);
-        }
-
-        /* POS Specific Styles */
-        .pos-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 1rem;
-        }
-
-        .pos-card {
-            cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.1s;
-        }
-
-        .pos-card:active {
-            transform: scale(0.98);
-        }
-
-        .calc-btn {
-            background: #fff;
-            border: 1px solid #e0f2fe;
-            border-radius: 0.5rem;
-            font-size: 1.25rem;
-            transition: all 0.1s;
-        }
-
-        .calc-btn:hover {
-            background-color: #f0f9ff;
-            border-color: #0284c7;
-        }
-
-        .calc-btn.op {
-            background-color: #e0f2fe;
-            color: #0369a1;
-            font-weight: bold;
-        }
-
-        .calc-btn.eq {
-            background-color: #0284c7;
-            color: white;
-            border-color: #0284c7;
-        }
-
-        .calc-btn.eq:hover {
-            background-color: #0369a1;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
         }
 
         @media (max-width: 768px) {
@@ -191,25 +218,8 @@
                 transform: translateX(-100%);
             }
 
-            .sidebar.open {
-                transform: translateX(0);
-            }
-
             .main-content {
                 margin-left: 0;
-            }
-
-            .pos-container {
-                flex-direction: column-reverse;
-            }
-
-            .pos-products {
-                width: 100%;
-            }
-
-            .pos-cart {
-                width: 100%;
-                height: 400px;
             }
         }
     </style>
@@ -218,19 +228,16 @@
 <body class="min-h-screen">
     <div class="bg-mesh"></div>
 
-    <!-- Menu Toggle -->
     <button id="menuToggle" class="menu-toggle hidden">
         <i data-lucide="menu" class="w-6 h-6"></i>
     </button>
 
-    <!-- Sidebar Overlay -->
     <div id="sidebarOverlay" class="sidebar-overlay"></div>
 
-    <!-- Sidebar -->
     <aside id="sidebar" class="sidebar closed">
         <div class="p-6">
             <div class="flex items-center justify-between mb-8">
-                <h2 class="text-xl font-bold text-slate-800">EPSILON<span class="text-sky-600"> AZURE</span></h2>
+                <h2 class="text-2xl font-bold text-gray-800">EPSILON<span class="text-blue-600"> AZURE</span></h2>
                 <button id="closeSidebar" class="md:hidden text-gray-500 hover:text-gray-800">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
@@ -238,56 +245,50 @@
 
             <nav class="space-y-2">
                 <button
-                    class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-sky-50 hover:text-sky-700 transition text-left text-gray-600"
+                    class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-gray-600"
                     data-page="dashboard">
                     <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
                     <span>Dashboard</span>
                 </button>
                 <button
-                    class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-sky-50 hover:text-sky-700 transition text-left text-gray-600"
-                    data-page="operations">
+                    class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-gray-600"
+                    data-page="products">
                     <i data-lucide="package" class="w-5 h-5"></i>
-                    <span>Operations</span>
+                    <span>Products</span>
                 </button>
                 <button
-                    class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-sky-50 hover:text-sky-700 transition text-left text-gray-600"
-                    data-page="pos">
-                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
-                    <span>Point of Sale</span>
-                </button>
-                <button
-                    class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-sky-50 hover:text-sky-700 transition text-left text-gray-600"
-                    data-page="staff">
-                    <i data-lucide="users" class="w-5 h-5"></i>
-                    <span>Staff & HR</span>
-                </button>
-                <button
-                    class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-sky-50 hover:text-sky-700 transition text-left text-gray-600"
-                    data-page="crm">
+                    class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-gray-600"
+                    data-page="services">
                     <i data-lucide="briefcase" class="w-5 h-5"></i>
-                    <span>CRM & Clients</span>
+                    <span>Services</span>
                 </button>
                 <button
-                    class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-sky-50 hover:text-sky-700 transition text-left text-gray-600"
-                    data-page="assets">
-                    <i data-lucide="hard-drive" class="w-5 h-5"></i>
-                    <span>Assets</span>
+                    class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-gray-600"
+                    data-page="customers">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                    <span>Customers</span>
                 </button>
                 <button
-                    class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-sky-50 hover:text-sky-700 transition text-left text-gray-600"
+                    class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-gray-600"
                     data-page="deliveries">
                     <i data-lucide="truck" class="w-5 h-5"></i>
                     <span>Deliveries</span>
                 </button>
                 <button
-                    class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-sky-50 hover:text-sky-700 transition text-left text-gray-600"
-                    data-page="tools">
-                    <i data-lucide="wrench" class="w-5 h-5"></i>
-                    <span>Business Tools</span>
+                    class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-gray-600"
+                    data-page="employees">
+                    <i data-lucide="briefcase" class="w-5 h-5"></i>
+                    <span>Employees</span>
+                </button>
+                <button
+                    class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-gray-600"
+                    data-page="facilities">
+                    <i data-lucide="building" class="w-5 h-5"></i>
+                    <span>Facilities</span>
                 </button>
             </nav>
 
-            <div class="mt-8 pt-8 border-t border-gray-200">
+            <div class="mt-4 pt-4 border-t border-gray-200">
                 <button id="logoutBtn"
                     class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition text-left text-gray-600">
                     <i data-lucide="log-out" class="w-5 h-5"></i>
@@ -297,468 +298,282 @@
         </div>
     </aside>
 
-    <!-- Auth Page -->
     <div id="authPage" class="page active px-6">
         <div class="max-w-md w-full">
             <div class="glass p-8 rounded-2xl">
                 <div class="text-center mb-8">
-                    <div
-                        class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-sky-100 text-sky-600 mb-4">
-                        <i data-lucide="building-2" class="w-6 h-6"></i>
-                    </div>
-                    <h1 class="text-3xl font-bold text-slate-800 mb-2">EPSILON<span class="text-sky-600"> AZURE</span>
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">EPSILON<span class="text-blue-600"> AZURE</span>
                     </h1>
-                    <p class="text-slate-500 text-sm">Business Management for Kenya.</p>
+                    <p class="text-gray-500 text-sm">Business Management System</p>
+                </div>
+
+                <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                    <div class="flex items-start gap-3">
+                        <i data-lucide="info" class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"></i>
+                        <div>
+                            <h3 class="font-bold text-blue-900 mb-1">Welcome</h3>
+                            <p class="text-sm text-blue-800">Sign in to manage your products, services, and customers.
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 <form id="loginForm" class="space-y-4">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4">Sign In</h2>
                     <input id="loginEmail" type="email" placeholder="Email Address" class="input-field" required>
                     <input id="loginPassword" type="password" placeholder="Password" class="input-field" required>
                     <button type="submit"
-                        class="w-full bg-sky-600 hover:bg-sky-700 text-white font-medium py-3 rounded-lg transition shadow-md shadow-sky-200">Sign
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition shadow-md shadow-blue-200">Sign
                         In</button>
-                    <p class="text-center text-sm text-slate-500 mt-4">Don't have an account? <a href="#"
-                            id="showSignup" class="text-sky-600 font-semibold hover:underline">Get Started</a></p>
+                    <p class="text-center text-sm text-gray-500 mt-4">Don't have an account? <a href="#" id="showSignup"
+                            class="text-blue-600 font-semibold hover:underline">Sign Up</a></p>
                     <p id="loginError" class="text-red-500 text-sm text-center hidden"></p>
                 </form>
 
                 <form id="signupForm" class="space-y-4 hidden">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4">Create Account</h2>
                     <input id="signupEmail" type="email" placeholder="Email Address" class="input-field" required>
                     <input id="signupPassword" type="password" placeholder="Create Password" class="input-field"
                         required>
                     <button type="submit"
-                        class="w-full bg-sky-600 hover:bg-sky-700 text-white font-medium py-3 rounded-lg transition shadow-md shadow-sky-200">Create
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition shadow-md shadow-blue-200">Create
                         Account</button>
-                    <p class="text-center text-sm text-slate-500 mt-4">Already have an account? <a href="#"
-                            id="showLogin" class="text-sky-600 font-semibold hover:underline">Sign In</a></p>
+                    <p class="text-center text-sm text-gray-500 mt-4">Already have an account? <a href="#"
+                            id="showLogin" class="text-blue-600 font-semibold hover:underline">Sign In</a></p>
                     <p id="signupError" class="text-red-500 text-sm text-center hidden"></p>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Main Dashboard -->
     <div id="dashboardPage" class="page">
         <div id="mainContent" class="main-content expanded">
             <header class="flex justify-between items-center mb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-slate-800">Hello, <span id="userNameDisplay">Partner</span> 👋
-                    </h1>
-                    <p class="text-slate-500">Here is your business overview.</p>
+                    <h1 class="text-3xl font-bold text-gray-800">Hello, <span id="userNameDisplay">Admin</span> 👋</h1>
+                    <p class="text-gray-500">Here is your business overview.</p>
                 </div>
                 <div id="userAvatar"
-                    class="w-12 h-12 rounded-full bg-sky-100 flex items-center justify-center text-sky-700 font-bold text-xl border-2 border-white shadow-sm">
+                    class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl border-2 border-white shadow-sm">
+                    A
                 </div>
             </header>
 
-            <!-- DASHBOARD SECTION -->
             <div id="dashboardSection" class="section">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     <div class="glass p-6 rounded-2xl flex items-center justify-between">
                         <div>
-                            <p class="text-slate-500 text-sm font-medium">Inventory</p>
-                            <h3 id="statProducts" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
+                            <p class="text-gray-500 text-sm font-medium">Total Products</p>
+                            <h3 id="statProducts" class="text-3xl font-bold text-gray-800 mt-1">0</h3>
                         </div>
-                        <div class="w-12 h-12 bg-sky-100 rounded-full flex items-center justify-center text-sky-600"><i
-                                data-lucide="package" class="w-6 h-6"></i></div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                            <i data-lucide="package" class="w-6 h-6"></i>
+                        </div>
                     </div>
                     <div class="glass p-6 rounded-2xl flex items-center justify-between">
                         <div>
-                            <p class="text-slate-500 text-sm font-medium">Active Staff</p>
-                            <h3 id="statStaff" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
+                            <p class="text-gray-500 text-sm font-medium">Services</p>
+                            <h3 id="statServices" class="text-3xl font-bold text-gray-800 mt-1">0</h3>
                         </div>
                         <div
                             class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600">
-                            <i data-lucide="users" class="w-6 h-6"></i></div>
+                            <i data-lucide="briefcase" class="w-6 h-6"></i>
+                        </div>
                     </div>
                     <div class="glass p-6 rounded-2xl flex items-center justify-between">
                         <div>
-                            <p class="text-slate-500 text-sm font-medium">Clients</p>
-                            <h3 id="statClients" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
+                            <p class="text-gray-500 text-sm font-medium">Customers</p>
+                            <h3 id="statCustomers" class="text-3xl font-bold text-gray-800 mt-1">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center text-cyan-600">
+                            <i data-lucide="users" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+                    <div class="glass p-6 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium">Revenue</p>
+                            <h3 id="statRevenue" class="text-3xl font-bold text-gray-800 mt-1">$0</h3>
                         </div>
                         <div
                             class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
-                            <i data-lucide="briefcase" class="w-6 h-6"></i></div>
+                            <i data-lucide="dollar-sign" class="w-6 h-6"></i>
+                        </div>
                     </div>
                     <div class="glass p-6 rounded-2xl flex items-center justify-between">
                         <div>
-                            <p class="text-slate-500 text-sm font-medium">Est. Stock value</p>
-                            <h3 id="statRevenue" class="text-3xl font-bold text-slate-800 mt-1">Ksh 0</h3>
+                            <p class="text-gray-500 text-sm font-medium">Deliveries</p>
+                            <h3 id="statDeliveries" class="text-3xl font-bold text-gray-800 mt-1">0</h3>
                         </div>
-                        <div
-                            class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-amber-600">
-                            <i data-lucide="coins" class="w-6 h-6"></i></div>
+                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-600">
+                            <i data-lucide="truck" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+                    <div class="glass p-6 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium">Employees</p>
+                            <h3 id="statEmployees" class="text-3xl font-bold text-gray-800 mt-1">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
+                            <i data-lucide="briefcase" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+                    <div class="glass p-6 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium">Facilities</p>
+                            <h3 id="statFacilities" class="text-3xl font-bold text-gray-800 mt-1">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center text-pink-600">
+                            <i data-lucide="building" class="w-6 h-6"></i>
+                        </div>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="glass p-6 rounded-2xl">
-                        <h3 class="text-lg font-bold text-slate-800 mb-4">Assets Distribution</h3>
-                        <canvas id="productChart"></canvas>
+                <div class="glass p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Business Overview</h3>
+                    <canvas id="businessChart"></canvas>
+                </div>
+            </div>
+
+            <div id="productsSection" class="section hidden">
+                <div class="glass p-6 rounded-2xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Products</h2>
+                        <button onclick="showProductModal()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Add Product
+                        </button>
                     </div>
-                    <div class="glass p-6 rounded-2xl">
-                        <h3 class="text-lg font-bold text-slate-800 mb-4">Workforce Breakdown</h3>
-                        <canvas id="staffChart"></canvas>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-gray-200 text-sm text-gray-500">
+                                    <th class="py-3 px-4">Name</th>
+                                    <th class="py-3 px-4">Price</th>
+                                    <th class="py-3 px-4">Stock</th>
+                                    <th class="py-3 px-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsList" class="text-sm"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
-            <!-- POS SECTION -->
-            <div id="posSection" class="section hidden h-full">
-                <div class="flex flex-col lg:flex-row gap-4 h-[calc(100vh-140px)]">
-                    <!-- Product Grid -->
-                    <div class="flex-1 flex flex-col glass rounded-2xl overflow-hidden">
-                        <div class="p-4 border-b border-slate-100 flex gap-2">
-                            <input type="text" id="posSearch" oninput="loadPOSProducts()"
-                                placeholder="Search products..." class="input-field bg-white">
-                        </div>
-                        <div id="posProductGrid" class="flex-1 overflow-y-auto p-4 pos-grid">
-                            <!-- Products injected here -->
-                        </div>
+            <div id="servicesSection" class="section hidden">
+                <div class="glass p-6 rounded-2xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Services</h2>
+                        <button onclick="showServiceModal()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Add Service
+                        </button>
                     </div>
+                    <div id="servicesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </div>
+            </div>
 
-                    <!-- Cart Panel -->
-                    <div class="w-full lg:w-96 glass rounded-2xl flex flex-col border-l border-slate-100 shadow-lg">
-                        <div class="p-4 border-b border-slate-100 bg-sky-50 rounded-t-2xl">
-                            <h2 class="font-bold text-slate-800 flex items-center gap-2">
-                                <i data-lucide="shopping-bag" class="w-5 h-5"></i> Current Order
-                            </h2>
-                        </div>
-
-                        <div id="posCartItems" class="flex-1 overflow-y-auto p-4 space-y-2">
-                            <!-- Cart Items injected here -->
-                            <div class="text-center text-slate-400 py-10">Cart is empty</div>
-                        </div>
-
-                        <div class="p-4 bg-slate-50 border-t border-slate-200 rounded-b-2xl">
-                            <div class="space-y-2 mb-4">
-                                <div class="flex justify-between text-sm text-slate-600">
-                                    <span>Subtotal</span>
-                                    <span id="posSubtotal">Ksh 0.00</span>
-                                </div>
-                                <div class="flex justify-between text-sm text-slate-600">
-                                    <span>Tax (16%)</span>
-                                    <span id="posTax">Ksh 0.00</span>
-                                </div>
-                                <div
-                                    class="flex justify-between text-lg font-bold text-slate-800 border-t border-slate-200 pt-2">
-                                    <span>Total</span>
-                                    <span id="posTotal">Ksh 0.00</span>
-                                </div>
-                            </div>
-                            <button onclick="openCheckoutModal()"
-                                class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-lg shadow-lg flex justify-center items-center gap-2">
-                                <i data-lucide="check-circle" class="w-5 h-5"></i> Checkout
-                            </button>
-                        </div>
+            <div id="customersSection" class="section hidden">
+                <div class="glass p-6 rounded-2xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Customers</h2>
+                        <button onclick="showCustomerModal()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Add Customer
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-gray-200 text-sm text-gray-500">
+                                    <th class="py-3 px-4">Name</th>
+                                    <th class="py-3 px-4">Email</th>
+                                    <th class="py-3 px-4">Phone</th>
+                                    <th class="py-3 px-4">Status</th>
+                                    <th class="py-3 px-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersList" class="text-sm"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
-            <!-- OPERATIONS SECTION (Products/Services) -->
-            <div id="operationsSection" class="section hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-1">
-                        <div class="glass p-6 rounded-2xl sticky top-6">
-                            <h2 class="text-xl font-bold text-slate-800 mb-4">Add Item</h2>
-                            <form id="productForm" class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">Type</label>
-                                    <select id="prodType" class="input-field">
-                                        <option value="product">Physical Product</option>
-                                        <option value="service">Service</option>
-                                    </select>
-                                </div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Name</label><input
-                                        id="prodName" type="text" placeholder="e.g. Consultation, Maize Flour"
-                                        class="input-field" required></div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">Price (Ksh)</label>
-                                    <input id="prodPrice" type="number" step="0.01" placeholder="0.00"
-                                        class="input-field" required>
-                                </div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Stock /
-                                        Capacity</label><input id="prodStock" type="text"
-                                        placeholder="e.g. 50 units or 4 hrs/day" class="input-field"></div>
-                                <div><label
-                                        class="block text-sm font-medium text-slate-600 mb-1">Description</label><textarea
-                                        id="prodDesc" placeholder="Details..." class="input-field" rows="3"></textarea>
-                                </div>
-                                <button type="submit"
-                                    class="w-full bg-sky-600 hover:bg-sky-700 text-white font-medium py-3 rounded-lg transition">Add
-                                    to Inventory</button>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="lg:col-span-2">
-                        <div class="glass p-6 rounded-2xl min-h-[500px]">
-                            <div class="flex justify-between items-center mb-6">
-                                <h2 class="text-xl font-bold text-slate-800">Inventory & Services</h2>
-                                <div class="flex gap-2 text-sm">
-                                    <button id="filterAll"
-                                        class="px-3 py-1 bg-sky-100 text-sky-700 rounded-full font-medium">All</button>
-                                    <button id="filterProd"
-                                        class="px-3 py-1 text-slate-500 hover:bg-slate-100 rounded-full">Products</button>
-                                    <button id="filterServ"
-                                        class="px-3 py-1 text-slate-500 hover:bg-slate-100 rounded-full">Services</button>
-                                </div>
-                            </div>
-                            <div id="productsList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- STAFF SECTION -->
-            <div id="staffSection" class="section hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-1">
-                        <div class="glass p-6 rounded-2xl sticky top-6">
-                            <h2 class="text-xl font-bold text-slate-800 mb-4">Add Employee</h2>
-                            <form id="staffForm" class="space-y-4">
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Full
-                                        Name</label><input id="staffName" type="text" placeholder="John Doe"
-                                        class="input-field" required></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Role</label><input
-                                        id="staffRole" type="text" placeholder="e.g. Manager" class="input-field"
-                                        required></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Email</label><input
-                                        id="staffEmail" type="email" placeholder="john@company.com" class="input-field">
-                                </div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Monthly Salary
-                                        (Ksh)</label><input id="staffSalary" type="number" placeholder="0.00"
-                                        class="input-field"></div>
-                                <button type="submit"
-                                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg transition">Hire
-                                    Employee</button>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="lg:col-span-2">
-                        <div class="glass p-6 rounded-2xl min-h-[500px]">
-                            <h2 class="text-xl font-bold text-slate-800 mb-6">Team Roster</h2>
-                            <div id="staffList" class="space-y-3">
-                                <!-- Staff cards injected here -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CRM SECTION -->
-            <div id="crmSection" class="section hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-1">
-                        <div class="glass p-6 rounded-2xl sticky top-6">
-                            <h2 class="text-xl font-bold text-slate-800 mb-4">New Client</h2>
-                            <form id="clientForm" class="space-y-4">
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Company
-                                        Name</label><input id="clientCompany" type="text" placeholder="Acme Corp"
-                                        class="input-field" required></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Contact
-                                        Name</label><input id="clientContact" type="text" placeholder="Jane Smith"
-                                        class="input-field" required></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Email</label><input
-                                        id="clientEmail" type="email" placeholder="jane@acme.com" class="input-field">
-                                </div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Phone</label><input
-                                        id="clientPhone" type="tel" placeholder="+254 7..." class="input-field"></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Notes</label><textarea
-                                        id="clientNotes" class="input-field" rows="2"></textarea></div>
-                                <button type="submit"
-                                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 rounded-lg transition">Save
-                                    Client</button>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="lg:col-span-2">
-                        <div class="glass p-6 rounded-2xl min-h-[500px]">
-                            <h2 class="text-xl font-bold text-slate-800 mb-6">Client Directory</h2>
-                            <div id="clientsList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ASSETS SECTION -->
-            <div id="assetsSection" class="section hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-1">
-                        <div class="glass p-6 rounded-2xl sticky top-6">
-                            <h2 class="text-xl font-bold text-slate-800 mb-4">Add Asset</h2>
-                            <form id="assetForm" class="space-y-4">
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Asset Name</label><input id="assetName" type="text" placeholder="e.g. Laptop, Vehicle" class="input-field" required></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Category</label><select id="assetCategory" class="input-field"><option value="Equipment">Equipment</option><option value="Vehicle">Vehicle</option><option value="Property">Property</option><option value="Electronics">Electronics</option><option value="Other">Other</option></select></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Value (Ksh)</label><input id="assetValue" type="number" step="0.01" placeholder="0.00" class="input-field" required></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Purchase Date</label><input id="assetDate" type="date" class="input-field"></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Status</label><select id="assetStatus" class="input-field"><option value="Active">Active</option><option value="Maintenance">Maintenance</option><option value="Retired">Retired</option></select></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Notes</label><textarea id="assetNotes" class="input-field" rows="2"></textarea></div>
-                                <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-3 rounded-lg transition">Add Asset</button>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="lg:col-span-2">
-                        <div class="glass p-6 rounded-2xl min-h-[500px]">
-                            <h2 class="text-xl font-bold text-slate-800 mb-6">Asset Registry</h2>
-                            <div id="assetsList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- DELIVERIES SECTION -->
             <div id="deliveriesSection" class="section hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-1">
-                        <div class="glass p-6 rounded-2xl sticky top-6">
-                            <h2 class="text-xl font-bold text-slate-800 mb-4">New Delivery</h2>
-                            <form id="deliveryForm" class="space-y-4">
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Tracking ID</label><input id="deliveryTracking" type="text" placeholder="e.g. DEL-001" class="input-field" required></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Customer Name</label><input id="deliveryCustomer" type="text" placeholder="Customer Name" class="input-field" required></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Destination</label><input id="deliveryDestination" type="text" placeholder="Delivery Address" class="input-field" required></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Status</label><select id="deliveryStatus" class="input-field"><option value="Pending">Pending</option><option value="In Transit">In Transit</option><option value="Delivered">Delivered</option><option value="Cancelled">Cancelled</option></select></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Delivery Date</label><input id="deliveryDate" type="date" class="input-field"></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Notes</label><textarea id="deliveryNotes" class="input-field" rows="2"></textarea></div>
-                                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 rounded-lg transition">Create Delivery</button>
-                            </form>
-                        </div>
+                <div class="glass p-6 rounded-2xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Deliveries</h2>
+                        <button onclick="showDeliveryModal()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Add Delivery
+                        </button>
                     </div>
-                    <div class="lg:col-span-2">
-                        <div class="glass p-6 rounded-2xl min-h-[500px]">
-                            <h2 class="text-xl font-bold text-slate-800 mb-6">Delivery Tracking</h2>
-                            <div id="deliveriesList" class="space-y-3"></div>
-                        </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-gray-200 text-sm text-gray-500">
+                                    <th class="py-3 px-4">Tracking ID</th>
+                                    <th class="py-3 px-4">Customer</th>
+                                    <th class="py-3 px-4">Location</th>
+                                    <th class="py-3 px-4">Status</th>
+                                    <th class="py-3 px-4">Date</th>
+                                    <th class="py-3 px-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="deliveriesList" class="text-sm"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
-            <!-- TOOLS SECTION -->
-            <div id="toolsSection" class="section hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
-                    <div class="lg:col-span-1">
-                        <div class="glass p-6 rounded-2xl sticky top-6">
-                            <h2 class="text-xl font-bold text-slate-800 mb-4">Business Tools</h2>
-                            <div class="space-y-2">
-                                <button onclick="switchToolTab('calculator')" id="tab-calculator"
-                                    class="w-full text-left p-3 rounded-lg bg-sky-50 text-sky-800 font-medium transition">Calculator</button>
-                                <button onclick="switchToolTab('invoice')" id="tab-invoice"
-                                    class="w-full text-left p-3 rounded-lg hover:bg-slate-50 text-slate-600 font-medium transition">Invoice
-                                    Generator</button>
-                                <button onclick="switchToolTab('metrics')" id="tab-metrics"
-                                    class="w-full text-left p-3 rounded-lg hover:bg-slate-50 text-slate-600 font-medium transition">Metrics
-                                    & ROI</button>
-                            </div>
-                        </div>
+            <div id="employeesSection" class="section hidden">
+                <div class="glass p-6 rounded-2xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Employees</h2>
+                        <button onclick="showEmployeeModal()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Add Employee
+                        </button>
                     </div>
-                    <div class="lg:col-span-2">
-                        <!-- Standard Calculator -->
-                        <div id="tool-calculator" class="glass p-6 rounded-2xl">
-                            <h3 class="text-lg font-bold text-slate-800 mb-4">Standard Calculator</h3>
-                            <div class="max-w-sm mx-auto">
-                                <input type="text" id="calcDisplay" readonly
-                                    class="w-full text-right text-3xl p-4 mb-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-800">
-                                <div class="grid grid-cols-4 gap-2">
-                                    <button onclick="clearCalc()" class="calc-btn p-4 text-red-500">C</button>
-                                    <button onclick="appendCalc('/')" class="calc-btn op p-4">/</button>
-                                    <button onclick="appendCalc('*')" class="calc-btn op p-4">×</button>
-                                    <button onclick="deleteCalc()" class="calc-btn p-4 text-red-400">⌫</button>
-                                    <button onclick="appendCalc('7')" class="calc-btn p-4">7</button>
-                                    <button onclick="appendCalc('8')" class="calc-btn p-4">8</button>
-                                    <button onclick="appendCalc('9')" class="calc-btn p-4">9</button>
-                                    <button onclick="appendCalc('-')" class="calc-btn op p-4">-</button>
-                                    <button onclick="appendCalc('4')" class="calc-btn p-4">4</button>
-                                    <button onclick="appendCalc('5')" class="calc-btn p-4">5</button>
-                                    <button onclick="appendCalc('6')" class="calc-btn p-4">6</button>
-                                    <button onclick="appendCalc('+')" class="calc-btn op p-4">+</button>
-                                    <button onclick="appendCalc('1')" class="calc-btn p-4">1</button>
-                                    <button onclick="appendCalc('2')" class="calc-btn p-4">2</button>
-                                    <button onclick="appendCalc('3')" class="calc-btn p-4">3</button>
-                                    <button onclick="calculateResult()"
-                                        class="calc-btn eq p-4 row-span-2 flex items-center justify-center">=</button>
-                                    <button onclick="appendCalc('0')" class="calc-btn p-4 col-span-2">0</button>
-                                    <button onclick="appendCalc('.')" class="calc-btn p-4">.</button>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-gray-200 text-sm text-gray-500">
+                                    <th class="py-3 px-4">Name</th>
+                                    <th class="py-3 px-4">Position</th>
+                                    <th class="py-3 px-4">Department</th>
+                                    <th class="py-3 px-4">Email</th>
+                                    <th class="py-3 px-4">Status</th>
+                                    <th class="py-3 px-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeesList" class="text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
-                        <!-- Invoice Generator -->
-                        <div id="tool-invoice" class="glass p-6 rounded-2xl hidden">
-                            <h3 class="text-lg font-bold text-slate-800 mb-4">Quick Invoice Generator</h3>
-                            <div class="bg-slate-50 p-4 rounded-xl mb-4">
-                                <div class="grid grid-cols-2 gap-4 mb-4">
-                                    <div><label class="text-xs font-bold text-slate-500 uppercase">Client
-                                            Name</label><input id="invClient" type="text" class="input-field bg-white"
-                                            placeholder="Client Name"></div>
-                                    <div><label class="text-xs font-bold text-slate-500 uppercase">Date</label><input
-                                            id="invDate" type="date" class="input-field bg-white"></div>
-                                </div>
-                                <div id="invoiceItems">
-                                    <div class="flex gap-2 mb-2">
-                                        <input type="text" placeholder="Item Name"
-                                            class="inv-item input-field bg-white text-sm flex-1">
-                                        <input type="number" placeholder="Qty"
-                                            class="inv-qty input-field bg-white text-sm w-20">
-                                        <input type="number" placeholder="Price (Ksh)"
-                                            class="inv-price input-field bg-white text-sm w-24">
-                                        <button type="button" onclick="calculateInvoice()"
-                                            class="bg-sky-600 text-white px-3 rounded hover:bg-sky-700">Add</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="border-t border-slate-200 pt-4">
-                                <table class="w-full text-sm text-left">
-                                    <thead class="text-slate-500 border-b border-slate-200">
-                                        <tr>
-                                            <th class="py-2">Item</th>
-                                            <th class="py-2">Qty</th>
-                                            <th class="py-2">Price</th>
-                                            <th class="py-2 text-right">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="invoiceTableBody" class="text-slate-700"></tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <td colspan="3" class="text-right font-bold pt-4">Total Due:</td>
-                                            <td id="invTotal" class="text-right font-bold text-sky-600 pt-4 text-lg">Ksh
-                                                0.00</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- Metrics -->
-                        <div id="tool-metrics" class="glass p-6 rounded-2xl hidden">
-                            <h3 class="text-lg font-bold text-slate-800 mb-4">ROI & Margin Calculator</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div class="p-4 border border-slate-200 rounded-xl">
-                                    <h4 class="font-semibold text-slate-700 mb-3">Return on Investment (ROI)</h4>
-                                    <div class="space-y-3">
-                                        <input id="roiInvested" type="number" placeholder="Amount Invested (Ksh)"
-                                            class="input-field" oninput="calcROI()">
-                                        <input id="roiReturned" type="number" placeholder="Amount Returned (Ksh)"
-                                            class="input-field" oninput="calcROI()">
-                                        <div class="bg-sky-50 p-3 rounded-lg text-center">
-                                            <p class="text-xs text-slate-500 uppercase">ROI Result</p>
-                                            <p id="roiResult" class="text-2xl font-bold text-sky-600">0%</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="p-4 border border-slate-200 rounded-xl">
-                                    <h4 class="font-semibold text-slate-700 mb-3">Profit Margin</h4>
-                                    <div class="space-y-3">
-                                        <input id="marginCost" type="number" placeholder="Cost of Goods (Ksh)"
-                                            class="input-field" oninput="calcMargin()">
-                                        <input id="marginRevenue" type="number" placeholder="Selling Price (Ksh)"
-                                            class="input-field" oninput="calcMargin()">
-                                        <div class="bg-indigo-50 p-3 rounded-lg text-center">
-                                            <p class="text-xs text-slate-500 uppercase">Margin</p>
-                                            <p id="marginResult" class="text-2xl font-bold text-indigo-600">0%</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
+            <div id="facilitiesSection" class="section hidden">
+                <div class="glass p-6 rounded-2xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Facilities</h2>
+                        <button onclick="showFacilityModal()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Add Facility
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-gray-200 text-sm text-gray-500">
+                                    <th class="py-3 px-4">Name</th>
+                                    <th class="py-3 px-4">Type</th>
+                                    <th class="py-3 px-4">Location</th>
+                                    <th class="py-3 px-4">Capacity</th>
+                                    <th class="py-3 px-4">Status</th>
+                                    <th class="py-3 px-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="facilitiesList" class="text-sm"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -766,63 +581,72 @@
         </div>
     </div>
 
-    <!-- Checkout Modal -->
-    <div id="checkoutModal"
-        class="fixed inset-0 z-[300] hidden flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <h3 class="text-xl font-bold text-slate-800 mb-4">Checkout</h3>
-            <div class="mb-4">
-                <p class="text-sm text-slate-500">Total Amount</p>
-                <p id="modalTotal" class="text-3xl font-bold text-sky-600">Ksh 0.00</p>
+    <div id="ai-modal"
+        class="fixed bottom-24 right-6 z-40 w-80 h-[500px] bg-white rounded-xl border border-gray-200 flex flex-col hidden transform origin-bottom-right">
+        <div id="ai-header"
+            class="bg-blue-600 text-white px-4 py-3 rounded-t-xl flex justify-between items-center select-none">
+            <div class="flex items-center gap-2">
+                <i data-lucide="bot" class="w-5 h-5"></i>
+                <h2 class="font-semibold text-sm">Azure AI</h2>
             </div>
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-slate-700 mb-2">Payment Method</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button onclick="selectPayment('cash')"
-                        class="pay-method p-3 border rounded-lg text-center hover:bg-sky-50 hover:border-sky-500 transition"
-                        data-val="cash">
-                        <i data-lucide="banknote" class="w-6 h-6 mx-auto mb-1"></i>
-                        <span class="text-xs font-bold">CASH</span>
-                    </button>
-                    <button onclick="selectPayment('mpesa')"
-                        class="pay-method p-3 border rounded-lg text-center hover:bg-green-50 hover:border-green-500 transition"
-                        data-val="mpesa">
-                        <i data-lucide="smartphone" class="w-6 h-6 mx-auto mb-1"></i>
-                        <span class="text-xs font-bold">M-PESA</span>
-                    </button>
-                    <button onclick="selectPayment('card')"
-                        class="pay-method p-3 border rounded-lg text-center hover:bg-indigo-50 hover:border-indigo-500 transition"
-                        data-val="card">
-                        <i data-lucide="credit-card" class="w-6 h-6 mx-auto mb-1"></i>
-                        <span class="text-xs font-bold">CARD</span>
-                    </button>
+            <button id="ai-close-btn" class="text-blue-100 hover:text-white transition-colors" aria-label="Close Chat">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto bg-gray-50 chat-scroll flex flex-col gap-3 text-sm">
+            <div class="flex gap-2">
+                <div
+                    class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 text-blue-600">
+                    <i data-lucide="bot" class="w-4 h-4"></i>
+                </div>
+                <div
+                    class="msg-bubble bg-white border border-gray-200 p-3 rounded-2xl rounded-tl-none text-gray-700 shadow-sm">
+                    Hello! I'm your Azure Business Assistant. How can I help you manage your business today?
                 </div>
             </div>
-            <div class="flex gap-3">
-                <button onclick="closeCheckoutModal()"
-                    class="flex-1 bg-slate-100 text-slate-700 py-2 rounded-lg hover:bg-slate-200">Cancel</button>
-                <button onclick="finalizeSale()"
-                    class="flex-1 bg-sky-600 text-white py-2 rounded-lg hover:bg-sky-700 font-bold">Confirm
-                    Sale</button>
-            </div>
+        </div>
+        <div class="p-3 bg-white border-t border-gray-100 rounded-b-xl">
+            <form id="chat-form" class="flex gap-2">
+                <input type="text" id="chat-input"
+                    class="flex-1 bg-gray-100 text-gray-800 text-sm rounded-full px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
+                    placeholder="Type a message..." autocomplete="off" required>
+                <button type="submit"
+                    class="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2.5 flex items-center justify-center transition-colors shadow-sm"
+                    id="send-btn">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                </button>
+            </form>
         </div>
     </div>
+
+    <div id="modalContainer"
+        class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modalTitle" class="text-xl font-bold text-gray-800">Add Item</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x"
+                        class="w-5 h-5"></i></button>
+            </div>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <button id="ai-toggle-btn"
+        class="fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2">
+        <i data-lucide="message-circle" class="w-6 h-6"></i>
+    </button>
 
     <script>
-        // --- CONFIG ---
         const { createClient } = supabase;
-        const supabaseClient = createClient('https://gfsqzkyviivhvyqadpeg.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmc3F6a3l2aWl2aHZ5cWFkcGVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0NDI0NDQsImV4cCI6MjA4NjAxODQ0NH0.MwC6dMZKFZMyklCJKqr4DPek8dxR-EswBZSd1L_AkMA', {
-            auth: { persistSession: true, storageKey: 'epsilon-azure-auth' }
-        });
+        const supabaseUrl = 'https://wacaibruxanqbkzdnkqr.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndhY2FpYnJ1eGFucWJremRua3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMjkxNTIsImV4cCI6MjA5MzkwNTE1Mn0._S75Sc-0iyRfBeEanJlMvmlPfuHNuBk_6zznYU4wPPc';
+
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
         lucide.createIcons();
         let currentUser = null;
-        let productivityChart = null;
-        let staffChart = null;
-        let prodFilter = 'all';
-        let posCart = [];
-        let selectedPaymentMethod = null;
+        let businessChart = null;
 
-        // --- UI LOGIC ---
         const sidebar = document.getElementById('sidebar');
         const mainContent = document.getElementById('mainContent');
         const menuToggle = document.getElementById('menuToggle');
@@ -830,8 +654,12 @@
         const sidebarOverlay = document.getElementById('sidebarOverlay');
 
         function toggleSidebar() {
-            sidebar.classList.toggle('closed'); sidebar.classList.toggle('open'); mainContent.classList.toggle('expanded'); sidebarOverlay.classList.toggle('active');
+            sidebar.classList.toggle('closed');
+            sidebar.classList.toggle('open');
+            mainContent.classList.toggle('expanded');
+            sidebarOverlay.classList.toggle('active');
         }
+
         menuToggle.addEventListener('click', toggleSidebar);
         closeSidebar.addEventListener('click', toggleSidebar);
         sidebarOverlay.addEventListener('click', toggleSidebar);
@@ -840,547 +668,763 @@
             btn.addEventListener('click', () => {
                 const page = btn.dataset.page;
                 document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
-                document.getElementById(`${page}Section`).classList.remove('hidden');
-                document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('bg-sky-50', 'text-sky-700'); b.classList.add('text-gray-600'); });
-                btn.classList.remove('text-gray-600'); btn.classList.add('bg-sky-50', 'text-sky-700');
+                const targetSection = document.getElementById(`${page}Section`);
+                if (targetSection) targetSection.classList.remove('hidden');
+                document.querySelectorAll('.nav-btn').forEach(b => {
+                    b.classList.remove('bg-blue-50', 'text-blue-700');
+                    b.classList.add('text-gray-600');
+                });
+                btn.classList.remove('text-gray-600');
+                btn.classList.add('bg-blue-50', 'text-blue-700');
                 if (window.innerWidth < 768) toggleSidebar();
                 if (page === 'dashboard') loadDashboardData();
-                if (page === 'operations') loadProducts();
-                if (page === 'staff') loadStaff();
-                if (page === 'crm') loadClients();
-                if (page === 'assets') loadAssets();
+                if (page === 'products') loadProducts();
+                if (page === 'services') loadServices();
+                if (page === 'customers') loadCustomers();
                 if (page === 'deliveries') loadDeliveries();
-                if (page === 'pos') {
-                    loadPOSProducts();
-                    posCart = [];
-                    renderCart();
-                }
+                if (page === 'employees') loadEmployees();
+                if (page === 'facilities') loadFacilities();
             });
         });
 
-        // --- POS LOGIC ---
-        async function loadPOSProducts() {
-            const search = document.getElementById('posSearch').value.toLowerCase();
-            let query = supabaseClient.from('epsilon_products').select('*').eq('user_id', currentUser.id).order('name');
-            const { data: prods } = await query;
-
-            const container = document.getElementById('posProductGrid');
-            container.innerHTML = '';
-
-            if (!prods || prods.length === 0) {
-                container.innerHTML = '<p class="col-span-full text-center text-slate-400">No items found.</p>';
-                return;
-            }
-
-            const filtered = prods.filter(p => p.name.toLowerCase().includes(search));
-
-            filtered.forEach(p => {
-                const div = document.createElement('div');
-                div.className = 'pos-card bg-white p-3 rounded-xl border border-slate-200 hover:border-sky-400 hover:shadow-md flex flex-col justify-between h-32';
-                div.onclick = () => addToCart(p);
-                div.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <span class="text-xs font-bold px-2 py-0.5 rounded-full ${p.type === 'product' ? 'bg-sky-100 text-sky-600' : 'bg-indigo-100 text-indigo-600'}">${p.type}</span>
-                        <i data-lucide="plus" class="w-5 h-5 text-slate-400"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-slate-800 text-sm leading-tight mb-1 line-clamp-2">${p.name}</h4>
-                        <p class="text-sky-600 font-bold">Ksh ${p.price.toLocaleString()}</p>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-            lucide.createIcons();
-        }
-
-        function addToCart(product) {
-            const existing = posCart.find(i => i.id === product.id);
-            if (existing) {
-                existing.qty++;
-            } else {
-                posCart.push({ ...product, qty: 1 });
-            }
-            renderCart();
-        }
-
-        function updateQty(id, change) {
-            const item = posCart.find(i => i.id === id);
-            if (item) {
-                item.qty += change;
-                if (item.qty <= 0) {
-                    posCart = posCart.filter(i => i.id !== id);
-                }
-                renderCart();
-            }
-        }
-
-        function renderCart() {
-            const container = document.getElementById('posCartItems');
-            container.innerHTML = '';
-
-            if (posCart.length === 0) {
-                container.innerHTML = '<div class="text-center text-slate-400 py-10 flex flex-col items-center gap-2"><i data-lucide="shopping-cart" class="w-8 h-8 opacity-50"></i><p>Cart is empty</p></div>';
-                document.getElementById('posSubtotal').innerText = 'Ksh 0.00';
-                document.getElementById('posTax').innerText = 'Ksh 0.00';
-                document.getElementById('posTotal').innerText = 'Ksh 0.00';
-                lucide.createIcons();
-                return;
-            }
-
-            let subtotal = 0;
-
-            posCart.forEach(item => {
-                subtotal += (item.price * item.qty);
-                const div = document.createElement('div');
-                div.className = 'bg-white p-3 rounded-lg border border-slate-100 flex justify-between items-center shadow-sm';
-                div.innerHTML = `
-                    <div class="flex-1">
-                        <p class="text-sm font-bold text-slate-800">${item.name}</p>
-                        <p class="text-xs text-slate-500">Ksh ${item.price.toLocaleString()}</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="updateQty(${item.id}, -1)" class="w-6 h-6 rounded bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-slate-200">-</button>
-                        <span class="text-sm font-bold w-4 text-center">${item.qty}</span>
-                        <button onclick="updateQty(${item.id}, 1)" class="w-6 h-6 rounded bg-sky-100 text-sky-600 flex items-center justify-center hover:bg-sky-200">+</button>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-
-            const tax = subtotal * 0.16;
-            const total = subtotal + tax;
-
-            document.getElementById('posSubtotal').innerText = `Ksh ${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-            document.getElementById('posTax').innerText = `Ksh ${tax.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-            document.getElementById('posTotal').innerText = `Ksh ${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-            document.getElementById('modalTotal').innerText = `Ksh ${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-        }
-
-        function openCheckoutModal() {
-            if (posCart.length === 0) return alert("Cart is empty!");
-            document.getElementById('checkoutModal').classList.remove('hidden');
-        }
-        function closeCheckoutModal() {
-            document.getElementById('checkoutModal').classList.add('hidden');
-            selectedPaymentMethod = null;
-            document.querySelectorAll('.pay-method').forEach(b => b.classList.remove('ring-2', 'ring-sky-500', 'bg-sky-50'));
-        }
-
-        function selectPayment(method) {
-            selectedPaymentMethod = method;
-            document.querySelectorAll('.pay-method').forEach(b => b.classList.remove('ring-2', 'ring-sky-500', 'bg-sky-50'));
-            const btn = document.querySelector(`.pay-method[data-val="${method}"]`);
-            btn.classList.add('ring-2', 'ring-sky-500', 'bg-sky-50');
-        }
-
-        async function finalizeSale() {
-            if (!selectedPaymentMethod) return alert("Please select a payment method");
-
-            const total = parseFloat(document.getElementById('posTotal').innerText.replace('Ksh ', '').replace(/,/g, ''));
-
-            const { error } = await supabaseClient.from('epsilon_sales').insert([{
-                user_id: currentUser.id,
-                items: posCart,
-                total_amount: total,
-                payment_method: selectedPaymentMethod
-            }]);
-
+        async function checkSession() {
+            const { data, error } = await supabaseClient.auth.getSession();
             if (error) {
-                alert("Error processing sale: " + error.message);
+                showAuthPage();
+                return;
+            }
+            const session = data?.session;
+            if (session?.user) {
+                currentUser = session.user;
+                setupUserInterface();
             } else {
-                alert("Sale Completed Successfully!");
-                closeCheckoutModal();
-                posCart = [];
-                renderCart();
+                showAuthPage();
             }
         }
 
-        // --- CALCULATOR LOGIC ---
-        let calcExpression = ""; const display = document.getElementById('calcDisplay');
-        function appendCalc(val) { calcExpression += val; display.value = calcExpression; }
-        function clearCalc() { calcExpression = ""; display.value = ""; }
-        function deleteCalc() { calcExpression = calcExpression.slice(0, -1); display.value = calcExpression; }
-        function calculateResult() { try { calcExpression = eval(calcExpression).toString(); display.value = calcExpression; } catch (e) { display.value = "Error"; calcExpression = ""; } }
-
-        function calcROI() {
-            const inv = parseFloat(document.getElementById('roiInvested').value);
-            const ret = parseFloat(document.getElementById('roiReturned').value);
-            const res = document.getElementById('roiResult');
-            if (inv && ret) {
-                const roi = ((ret - inv) / inv) * 100;
-                res.innerText = roi.toFixed(2) + "%";
-                res.className = roi >= 0 ? "text-2xl font-bold text-emerald-600" : "text-2xl font-bold text-red-600";
-            } else { res.innerText = "0%"; }
-        }
-        function calcMargin() {
-            const cost = parseFloat(document.getElementById('marginCost').value);
-            const rev = parseFloat(document.getElementById('marginRevenue').value);
-            const res = document.getElementById('marginResult');
-            if (cost && rev) {
-                res.innerText = (((rev - cost) / rev) * 100).toFixed(2) + "%";
-            } else { res.innerText = "0%"; }
+        function showAuthPage() {
+            document.getElementById('authPage').classList.add('active');
+            document.getElementById('dashboardPage').classList.remove('active');
+            menuToggle.classList.add('hidden');
         }
 
-        function switchToolTab(tab) {
-            ['calculator', 'invoice', 'metrics'].forEach(t => {
-                document.getElementById(`tool-${t}`).classList.add('hidden');
-                document.getElementById(`tab-${t}`).classList.remove('bg-sky-50', 'text-sky-800');
-                document.getElementById(`tab-${t}`).classList.add('hover:bg-slate-50', 'text-slate-600');
-            });
-            document.getElementById(`tool-${tab}`).classList.remove('hidden');
-            document.getElementById(`tab-${tab}`).classList.add('bg-sky-50', 'text-sky-800');
-            document.getElementById(`tab-${tab}`).classList.remove('hover:bg-slate-50', 'text-slate-600');
+        function setupUserInterface() {
+            document.getElementById('authPage').classList.remove('active');
+            document.getElementById('dashboardPage').classList.add('active');
+            menuToggle.classList.remove('hidden');
+            sidebar.classList.remove('closed');
+            mainContent.classList.remove('expanded');
+
+            const email = currentUser?.email || 'admin@example.com';
+            const name = email.split('@')[0];
+            document.getElementById('userNameDisplay').textContent = name.charAt(0).toUpperCase() + name.slice(1);
+            document.getElementById('userAvatar').textContent = name.charAt(0).toUpperCase();
+
+            document.querySelector('[data-page="dashboard"]').click();
         }
 
-        // --- INVOICE GENERATOR ---
-        function calculateInvoice() {
-            const item = document.querySelector('.inv-item').value;
-            const qty = parseFloat(document.querySelector('.inv-qty').value);
-            const price = parseFloat(document.querySelector('.inv-price').value);
-
-            if (!item || !qty || !price) return;
-
-            const total = qty * price;
-            const tbody = document.getElementById('invoiceTableBody');
-            const row = `<tr><td class="py-2">${item}</td><td class="py-2">${qty}</td><td class="py-2">Ksh ${price.toLocaleString()}</td><td class="py-2 text-right">Ksh ${total.toLocaleString()}</td></tr>`;
-            tbody.insertAdjacentHTML('beforeend', row);
-
-            // Clear inputs
-            document.querySelector('.inv-item').value = '';
-            document.querySelector('.inv-qty').value = '';
-            document.querySelector('.inv-price').value = '';
-
-            // Update Total
-            updateInvoiceTotal();
-        }
-        function updateInvoiceTotal() {
-            const rows = document.querySelectorAll('#invoiceTableBody tr');
-            let total = 0;
-            rows.forEach(r => {
-                // Remove "Ksh " and commas before parsing
-                const rawVal = r.lastElementChild.innerText.replace('Ksh ', '').replace(/,/g, '');
-                total += parseFloat(rawVal);
-            });
-            document.getElementById('invTotal').innerText = 'Ksh ' + total.toLocaleString();
-        }
-
-        // --- OPERATIONS (PRODUCTS) LOGIC ---
-        document.getElementById('productForm').addEventListener('submit', async (e) => {
+        document.getElementById('showSignup').addEventListener('click', (e) => {
             e.preventDefault();
-            const { error } = await supabaseClient.from('epsilon_products').insert([{
-                user_id: currentUser.id,
-                type: document.getElementById('prodType').value,
-                name: document.getElementById('prodName').value,
-                price: parseFloat(document.getElementById('prodPrice').value),
-                stock_or_capacity: document.getElementById('prodStock').value,
-                description: document.getElementById('prodDesc').value
-            }]);
-            if (error) alert("Error: " + error.message); else { e.target.reset(); loadProducts(); }
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('signupForm').classList.remove('hidden');
+            lucide.createIcons();
+        });
+
+        document.getElementById('showLogin').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('signupForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+        });
+
+        function showError(id, message) {
+            const el = document.getElementById(id);
+            el.textContent = message;
+            el.classList.remove('hidden');
+        }
+
+        function clearError(id) {
+            const el = document.getElementById(id);
+            el.textContent = '';
+            el.classList.add('hidden');
+        }
+
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearError('signupError');
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value;
+
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({ email, password });
+                if (error) throw error;
+
+                document.getElementById('signupForm').classList.add('hidden');
+                document.getElementById('loginForm').classList.remove('hidden');
+                alert(data?.user ? 'Account created! Please sign in.' : 'Check your email to confirm your account.');
+            } catch (err) {
+                showError('signupError', err.message || 'Sign up failed.');
+            }
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearError('loginError');
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+
+                currentUser = data?.user || data?.session?.user || null;
+                if (!currentUser) throw new Error('Login succeeded but no user session was returned.');
+                setupUserInterface();
+            } catch (err) {
+                showError('loginError', err.message || 'Sign in failed.');
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await supabaseClient.auth.signOut();
+            currentUser = null;
+            window.location.reload();
+        });
+
+        async function loadDashboardData() {
+            if (!currentUser) return;
+            const { count: prodCount } = await supabaseClient.from('products').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id);
+            const { count: servCount } = await supabaseClient.from('services').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id);
+            const { count: custCount } = await supabaseClient.from('customers').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id);
+            const { count: delivCount } = await supabaseClient.from('deliveries').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id);
+            const { count: empCount } = await supabaseClient.from('employees').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id);
+            const { count: facCount } = await supabaseClient.from('facilities').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id);
+
+            document.getElementById('statProducts').textContent = prodCount || 0;
+            document.getElementById('statServices').textContent = servCount || 0;
+            document.getElementById('statCustomers').textContent = custCount || 0;
+            document.getElementById('statDeliveries').textContent = delivCount || 0;
+            document.getElementById('statEmployees').textContent = empCount || 0;
+            document.getElementById('statFacilities').textContent = facCount || 0;
+            const dummyRevenue = ((prodCount || 0) * 150) + ((servCount || 0) * 500);
+            document.getElementById('statRevenue').textContent = '$' + dummyRevenue.toLocaleString();
+
+            updateChart(prodCount || 0, servCount || 0, custCount || 0);
+        }
+
+        function updateChart(products, services, customers) {
+            const ctx = document.getElementById('businessChart').getContext('2d');
+            if (businessChart) businessChart.destroy();
+            businessChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Products', 'Services', 'Customers'],
+                    datasets: [{
+                        label: 'Count',
+                        data: [products, services, customers],
+                        backgroundColor: ['#3b82f6', '#6366f1', '#06b6d4'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        const modalContainer = document.getElementById('modalContainer');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalContent = document.getElementById('modalContent');
+
+        function closeModal() {
+            modalContainer.classList.add('hidden');
+        }
+
+        modalContainer.addEventListener('click', (e) => {
+            if (e.target === modalContainer) closeModal();
         });
 
         async function loadProducts() {
-            let query = supabaseClient.from('epsilon_products').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-            if (prodFilter === 'product') query = query.eq('type', 'product');
-            if (prodFilter === 'service') query = query.eq('type', 'service');
+            const { data: products, error } = await supabaseClient.from('products').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+            const tbody = document.getElementById('productsList');
+            tbody.innerHTML = '';
 
-            const { data: prods } = await query;
-            const container = document.getElementById('productsList');
-            container.innerHTML = '';
-            if (!prods || prods.length === 0) { container.innerHTML = `<div class="col-span-2 text-center py-10 text-slate-400"><p>No items found.</p></div>`; return; }
+            if (error) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500">Error loading products. Did you create the SQL table?</td></tr>';
+                return;
+            }
+            if (!products || products.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-400">No products found.</td></tr>';
+                return;
+            }
+            products.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-gray-100 hover:bg-gray-50';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-medium text-gray-800">${p.name}</td>
+                    <td class="py-3 px-4 text-gray-600">$${p.price}</td>
+                    <td class="py-3 px-4 text-gray-600">${p.stock}</td>
+                    <td class="py-3 px-4 flex gap-2">
+                        <button onclick="deleteProduct(${p.id})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
 
-            prods.forEach(p => {
-                const div = document.createElement('div');
-                const isProd = p.type === 'product';
-                div.className = 'p-4 rounded-xl bg-white border border-slate-100 hover:shadow-md transition relative group flex flex-col justify-between';
-                div.innerHTML = `
-                    <div>
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="text-xs font-semibold px-2 py-1 rounded-md uppercase tracking-wide ${isProd ? 'bg-sky-50 text-sky-600' : 'bg-indigo-50 text-indigo-600'}">${p.type}</span>
-                            <button onclick="deleteProduct(${p.id})" class="text-slate-300 hover:text-red-500 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                        </div>
-                        <h3 class="font-bold text-slate-800 leading-tight">${p.name}</h3>
-                        <p class="text-sm text-slate-500 mt-1 line-clamp-2">${p.description || 'No description'}</p>
+        function showProductModal() {
+            modalTitle.innerText = "Add Product";
+            modalContent.innerHTML = `
+                <form onsubmit="handleProductSubmit(event)" class="space-y-4">
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Product Name</label><input name="name" type="text" class="input-field" required></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Description</label><textarea name="description" class="input-field" rows="2"></textarea></div>
+                    <div class="flex gap-2">
+                        <div class="flex-1"><label class="block text-sm font-medium text-gray-700 mb-1">Price ($)</label><input name="price" type="number" step="0.01" class="input-field" required></div>
+                        <div class="flex-1"><label class="block text-sm font-medium text-gray-700 mb-1">Stock</label><input name="stock" type="number" class="input-field" required></div>
                     </div>
-                    <div class="mt-4 pt-3 border-t border-slate-50 flex justify-between items-end">
-                        <div>
-                            <p class="text-xs text-slate-400">${isProd ? 'Stock' : 'Capacity'}</p>
-                            <p class="text-sm font-medium text-slate-700">${p.stock_or_capacity || '-'}</p>
-                        </div>
-                        <p class="text-lg font-bold text-slate-800">Ksh ${p.price.toLocaleString()}</p>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg">Save Product</button>
+                </form>
+            `;
+            modalContainer.classList.remove('hidden');
+        }
+
+        async function handleProductSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const { error } = await supabaseClient.from('products').insert([{
+                user_id: currentUser.id,
+                name: formData.get('name'),
+                description: formData.get('description'),
+                price: parseFloat(formData.get('price')),
+                stock: parseInt(formData.get('stock'))
+            }]);
+            if (error) alert(error.message);
+            else {
+                closeModal();
+                loadProducts();
+            }
+        }
+
+        async function deleteProduct(id) {
+            if (confirm("Delete this product?")) {
+                await supabaseClient.from('products').delete().eq('id', id);
+                loadProducts();
+            }
+        }
+
+        async function loadServices() {
+            const { data: services, error } = await supabaseClient.from('services').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+            const container = document.getElementById('servicesList');
+            container.innerHTML = '';
+
+            if (error) {
+                container.innerHTML = '<p class="text-red-500 text-center">Error loading services. Did you create the SQL table?</p>';
+                return;
+            }
+            if (!services || services.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center">No services found.</p>';
+                return;
+            }
+            services.forEach(s => {
+                const div = document.createElement('div');
+                div.className = 'p-4 rounded-xl border bg-white hover:shadow-md transition relative';
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-bold text-gray-800">${s.name}</h3>
+                        <button onclick="deleteService(${s.id})" class="text-gray-400 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2 mb-3">${s.description || 'No description'}</p>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-blue-600 font-bold">$${s.price}</span>
+                        <span class="text-gray-400 bg-gray-100 px-2 py-1 rounded text-xs">${s.duration || 'N/A'}</span>
                     </div>
                 `;
                 container.appendChild(div);
             });
             lucide.createIcons();
         }
-        async function deleteProduct(id) { if (confirm('Remove item?')) { await supabaseClient.from('epsilon_products').delete().eq('id', id); loadProducts(); } }
 
-        const filterBtns = { 'filterAll': 'all', 'filterProd': 'product', 'filterServ': 'service' };
-        Object.keys(filterBtns).forEach(btnId => {
-            document.getElementById(btnId).addEventListener('click', (e) => {
-                prodFilter = filterBtns[btnId];
-                Object.keys(filterBtns).forEach(id => { const btn = document.getElementById(id); btn.className = 'px-3 py-1 rounded-full font-medium transition ' + (id === btnId ? 'bg-sky-100 text-sky-700' : 'text-slate-500 hover:bg-slate-100'); }); loadProducts();
-            });
-        });
+        function showServiceModal() {
+            modalTitle.innerText = "Add Service";
+            modalContent.innerHTML = `
+                <form onsubmit="handleServiceSubmit(event)" class="space-y-4">
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Service Name</label><input name="name" type="text" class="input-field" required></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Description</label><textarea name="description" class="input-field" rows="2"></textarea></div>
+                    <div class="flex gap-2">
+                        <div class="flex-1"><label class="block text-sm font-medium text-gray-700 mb-1">Price ($)</label><input name="price" type="number" step="0.01" class="input-field" required></div>
+                        <div class="flex-1"><label class="block text-sm font-medium text-gray-700 mb-1">Duration</label><input name="duration" type="text" placeholder="e.g. 1 Hour" class="input-field"></div>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg">Save Service</button>
+                </form>
+            `;
+            modalContainer.classList.remove('hidden');
+        }
 
-        // --- STAFF LOGIC ---
-        document.getElementById('staffForm').addEventListener('submit', async (e) => {
+        async function handleServiceSubmit(e) {
             e.preventDefault();
-            const { error } = await supabaseClient.from('epsilon_staff').insert([{
+            const formData = new FormData(e.target);
+            const { error } = await supabaseClient.from('services').insert([{
                 user_id: currentUser.id,
-                name: document.getElementById('staffName').value,
-                role: document.getElementById('staffRole').value,
-                email: document.getElementById('staffEmail').value,
-                salary: parseFloat(document.getElementById('staffSalary').value) || 0
+                name: formData.get('name'),
+                description: formData.get('description'),
+                price: parseFloat(formData.get('price')),
+                duration: formData.get('duration')
             }]);
-            if (error) alert("Error: " + error.message); else { e.target.reset(); loadStaff(); }
-        });
+            if (error) alert(error.message);
+            else {
+                closeModal();
+                loadServices();
+            }
+        }
 
-        async function loadStaff() {
-            const { data: staff } = await supabaseClient.from('epsilon_staff').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-            const container = document.getElementById('staffList');
-            container.innerHTML = '';
-            if (!staff || staff.length === 0) { container.innerHTML = `<div class="text-center py-10 text-slate-400"><p>No staff added yet.</p></div>`; return; }
+        async function deleteService(id) {
+            if (confirm("Delete this service?")) {
+                await supabaseClient.from('services').delete().eq('id', id);
+                loadServices();
+            }
+        }
 
-            staff.forEach(s => {
-                const div = document.createElement('div');
-                div.className = 'flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:shadow-sm transition';
-                div.innerHTML = `
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">${s.name.charAt(0)}</div>
-                        <div>
-                            <h3 class="font-bold text-slate-800">${s.name}</h3>
-                            <p class="text-sm text-slate-500">${s.role}</p>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <p class="font-bold text-slate-700">Ksh ${s.salary ? s.salary.toLocaleString() : '0'}/mo</p>
-                        <p class="text-xs text-slate-400">${s.email || 'No email'}</p>
-                    </div>
-                    <button onclick="deleteStaff(${s.id})" class="ml-4 text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        async function loadCustomers() {
+            const { data: customers, error } = await supabaseClient.from('customers').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+            const tbody = document.getElementById('customersList');
+            tbody.innerHTML = '';
+
+            if (error) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-500">Error loading customers. Did you create the SQL table?</td></tr>';
+                return;
+            }
+            if (!customers || customers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400">No customers found.</td></tr>';
+                return;
+            }
+            customers.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-gray-100 hover:bg-gray-50';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-medium text-gray-800">${c.name}</td>
+                    <td class="py-3 px-4 text-gray-600">${c.email}</td>
+                    <td class="py-3 px-4 text-gray-600">${c.phone}</td>
+                    <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-bold ${c.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">${c.status}</span></td>
+                    <td class="py-3 px-4 flex gap-2">
+                        <button onclick="deleteCustomer(${c.id})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
                 `;
-                container.appendChild(div);
+                tbody.appendChild(tr);
             });
             lucide.createIcons();
         }
-        async function deleteStaff(id) { if (confirm('Remove employee?')) { await supabaseClient.from('epsilon_staff').delete().eq('id', id); loadStaff(); } }
 
-        // --- CRM LOGIC ---
-        document.getElementById('clientForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const { error } = await supabaseClient.from('epsilon_clients').insert([{
-                user_id: currentUser.id,
-                company_name: document.getElementById('clientCompany').value,
-                contact_name: document.getElementById('clientContact').value,
-                email: document.getElementById('clientEmail').value,
-                phone: document.getElementById('clientPhone').value,
-                notes: document.getElementById('clientNotes').value
-            }]);
-            if (error) alert("Error: " + error.message); else { e.target.reset(); loadClients(); }
-        });
-
-        async function loadClients() {
-            const { data: clients } = await supabaseClient.from('epsilon_clients').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-            const container = document.getElementById('clientsList');
-            container.innerHTML = '';
-            if (!clients || clients.length === 0) { container.innerHTML = `<div class="col-span-2 text-center py-10 text-slate-400"><p>No clients found.</p></div>`; return; }
-
-            clients.forEach(c => {
-                const div = document.createElement('div');
-                div.className = 'p-4 rounded-xl bg-white border border-slate-100 hover:border-emerald-200 hover:shadow-md transition group';
-                div.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <div class="flex items-center gap-2">
-                             <i data-lucide="building" class="w-4 h-4 text-slate-400"></i>
-                             <h3 class="font-bold text-slate-800">${c.company_name}</h3>
-                        </div>
-                        <button onclick="deleteClient(${c.id})" class="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        function showCustomerModal() {
+            modalTitle.innerText = "Add Customer";
+            modalContent.innerHTML = `
+                <form onsubmit="handleCustomerSubmit(event)" class="space-y-4">
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Name</label><input name="name" type="text" class="input-field" required></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Email</label><input name="email" type="email" class="input-field"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Phone</label><input name="phone" type="tel" class="input-field"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select name="status" class="input-field">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="pending">Pending</option>
+                        </select>
                     </div>
-                    <p class="text-sm text-slate-600 mb-2 flex items-center gap-2"><i data-lucide="user" class="w-3 h-3"></i> ${c.contact_name}</p>
-                    <div class="flex gap-4 text-xs text-slate-400">
-                        <span class="flex items-center gap-1"><i data-lucide="mail" class="w-3 h-3"></i> ${c.email || '-'}</span>
-                        <span class="flex items-center gap-1"><i data-lucide="phone" class="w-3 h-3"></i> ${c.phone || '-'}</span>
-                    </div>
-                    ${c.notes ? `<p class="mt-3 text-xs bg-slate-50 p-2 rounded text-slate-500 border border-slate-100 italic">"${c.notes}"</p>` : ''}
-                `;
-                container.appendChild(div);
-            });
-            lucide.createIcons();
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg">Save Customer</button>
+                </form>
+            `;
+            modalContainer.classList.remove('hidden');
         }
-        async function deleteClient(id) { if (confirm('Remove client?')) { await supabaseClient.from('epsilon_clients').delete().eq('id', id); loadClients(); } }
 
-        // --- ASSETS LOGIC ---
-        document.getElementById('assetForm').addEventListener('submit', async (e) => {
+        async function handleCustomerSubmit(e) {
             e.preventDefault();
-            const { error } = await supabaseClient.from('epsilon_assets').insert([{
+            const formData = new FormData(e.target);
+            const { error } = await supabaseClient.from('customers').insert([{
                 user_id: currentUser.id,
-                name: document.getElementById('assetName').value,
-                category: document.getElementById('assetCategory').value,
-                value: parseFloat(document.getElementById('assetValue').value),
-                purchase_date: document.getElementById('assetDate').value,
-                status: document.getElementById('assetStatus').value,
-                notes: document.getElementById('assetNotes').value
+                name: formData.get('name'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
+                status: formData.get('status')
             }]);
-            if (error) alert("Error: " + error.message); else { e.target.reset(); loadAssets(); }
-        });
-
-        async function loadAssets() {
-            const { data: assets } = await supabaseClient.from('epsilon_assets').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-            const container = document.getElementById('assetsList');
-            container.innerHTML = '';
-            if (!assets || assets.length === 0) { container.innerHTML = `<div class="col-span-2 text-center py-10 text-slate-400"><p>No assets found.</p></div>`; return; }
-
-            assets.forEach(a => {
-                const div = document.createElement('div');
-                const statusColor = a.status === 'Active' ? 'bg-green-100 text-green-700' : a.status === 'Maintenance' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700';
-                div.className = 'p-4 rounded-xl bg-white border border-slate-100 hover:shadow-md transition';
-                div.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="hard-drive" class="w-4 h-4 text-slate-400"></i>
-                            <h3 class="font-bold text-slate-800">${a.name}</h3>
-                        </div>
-                        <button onclick="deleteAsset(${a.id})" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                    </div>
-                    <div class="flex gap-2 mb-2">
-                        <span class="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-700">${a.category}</span>
-                        <span class="text-xs px-2 py-1 rounded-full ${statusColor}">${a.status}</span>
-                    </div>
-                    <p class="text-lg font-bold text-slate-800 mb-1">Ksh ${a.value.toLocaleString()}</p>
-                    <p class="text-xs text-slate-400">${a.purchase_date ? 'Purchased: ' + a.purchase_date : ''}</p>
-                    ${a.notes ? `<p class="mt-2 text-xs bg-slate-50 p-2 rounded text-slate-500 italic">${a.notes}</p>` : ''}
-                `;
-                container.appendChild(div);
-            });
-            lucide.createIcons();
+            if (error) alert(error.message);
+            else {
+                closeModal();
+                loadCustomers();
+            }
         }
-        async function deleteAsset(id) { if (confirm('Remove asset?')) { await supabaseClient.from('epsilon_assets').delete().eq('id', id); loadAssets(); } }
 
-        // --- DELIVERIES LOGIC ---
-        document.getElementById('deliveryForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const { error } = await supabaseClient.from('epsilon_deliveries').insert([{
-                user_id: currentUser.id,
-                tracking_id: document.getElementById('deliveryTracking').value,
-                customer_name: document.getElementById('deliveryCustomer').value,
-                destination: document.getElementById('deliveryDestination').value,
-                status: document.getElementById('deliveryStatus').value,
-                delivery_date: document.getElementById('deliveryDate').value,
-                notes: document.getElementById('deliveryNotes').value
-            }]);
-            if (error) alert("Error: " + error.message); else { e.target.reset(); loadDeliveries(); }
-        });
+        async function deleteCustomer(id) {
+            if (confirm("Delete this customer?")) {
+                await supabaseClient.from('customers').delete().eq('id', id);
+                loadCustomers();
+            }
+        }
 
         async function loadDeliveries() {
-            const { data: deliveries } = await supabaseClient.from('epsilon_deliveries').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-            const container = document.getElementById('deliveriesList');
-            container.innerHTML = '';
-            if (!deliveries || deliveries.length === 0) { container.innerHTML = `<div class="text-center py-10 text-slate-400"><p>No deliveries found.</p></div>`; return; }
+            const { data: deliveries, error } = await supabaseClient.from('deliveries').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+            const tbody = document.getElementById('deliveriesList');
+            tbody.innerHTML = '';
 
+            if (error) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-red-500">Error loading deliveries. Did you create the SQL table?</td></tr>';
+                return;
+            }
+            if (!deliveries || deliveries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">No deliveries found.</td></tr>';
+                return;
+            }
             deliveries.forEach(d => {
-                const div = document.createElement('div');
-                const statusColor = d.status === 'Delivered' ? 'bg-green-100 text-green-700' : d.status === 'In Transit' ? 'bg-blue-100 text-blue-700' : d.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700';
-                div.className = 'flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:shadow-sm transition';
-                div.innerHTML = `
-                    <div class="flex items-center gap-4 flex-1">
-                        <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center"><i data-lucide="truck" class="w-5 h-5"></i></div>
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-1">
-                                <h3 class="font-bold text-slate-800">${d.tracking_id}</h3>
-                                <span class="text-xs px-2 py-1 rounded-full ${statusColor}">${d.status}</span>
-                            </div>
-                            <p class="text-sm text-slate-600">${d.customer_name} → ${d.destination}</p>
-                            <p class="text-xs text-slate-400">${d.delivery_date ? 'Due: ' + d.delivery_date : 'No date set'}</p>
-                        </div>
-                    </div>
-                    <button onclick="deleteDelivery(${d.id})" class="ml-4 text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-gray-100 hover:bg-gray-50';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-medium text-gray-800">${d.tracking_id || 'N/A'}</td>
+                    <td class="py-3 px-4 text-gray-600">${d.customer_name || 'N/A'}</td>
+                    <td class="py-3 px-4 text-gray-600">${d.location || 'N/A'}</td>
+                    <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-bold ${d.status === 'delivered' ? 'bg-green-100 text-green-700' : d.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'}">${d.status}</span></td>
+                    <td class="py-3 px-4 text-gray-600">${d.delivery_date || 'N/A'}</td>
+                    <td class="py-3 px-4 flex gap-2">
+                        <button onclick="deleteDelivery(${d.id})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
                 `;
-                container.appendChild(div);
+                tbody.appendChild(tr);
             });
             lucide.createIcons();
         }
-        async function deleteDelivery(id) { if (confirm('Remove delivery?')) { await supabaseClient.from('epsilon_deliveries').delete().eq('id', id); loadDeliveries(); } }
 
-        // --- AUTH LOGIC ---
-        async function checkSession() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) { currentUser = session.user; setupUserInterface(); } else { showAuthPage(); }
-        }
-        function showAuthPage() { document.getElementById('authPage').classList.add('active'); document.getElementById('dashboardPage').classList.remove('active'); menuToggle.classList.add('hidden'); }
-        function setupUserInterface() {
-            document.getElementById('authPage').classList.remove('active'); document.getElementById('dashboardPage').classList.add('active'); menuToggle.classList.remove('hidden'); sidebar.classList.remove('closed'); mainContent.classList.remove('expanded');
-            const email = currentUser.email; const name = email.split('@')[0];
-            document.getElementById('userNameDisplay').textContent = name.charAt(0).toUpperCase() + name.slice(1);
-            document.getElementById('userAvatar').textContent = name.charAt(0).toUpperCase();
-            document.querySelector('[data-page="dashboard"]').click();
-        }
-        document.getElementById('showSignup').addEventListener('click', (e) => { e.preventDefault(); document.getElementById('loginForm').classList.add('hidden'); document.getElementById('signupForm').classList.remove('hidden'); });
-        document.getElementById('showLogin').addEventListener('click', (e) => { e.preventDefault(); document.getElementById('signupForm').classList.add('hidden'); document.getElementById('loginForm').classList.remove('hidden'); });
-        document.getElementById('signupForm').addEventListener('submit', async (e) => {
-            e.preventDefault(); const email = document.getElementById('signupEmail').value; const password = document.getElementById('signupPassword').value;
-            const { data, error } = await supabaseClient.auth.signUp({ email, password });
-            if (error) { document.getElementById('signupError').textContent = error.message; document.getElementById('signupError').classList.remove('hidden'); } else { document.getElementById('signupForm').classList.add('hidden'); document.getElementById('loginForm').classList.remove('hidden'); alert("Account created! Please sign in."); }
-        });
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault(); const email = document.getElementById('loginEmail').value; const password = document.getElementById('loginPassword').value;
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) { document.getElementById('loginError').textContent = error.message; document.getElementById('loginError').classList.remove('hidden'); } else { currentUser = data.user; setupUserInterface(); }
-        });
-        document.getElementById('logoutBtn').addEventListener('click', async () => { await supabaseClient.auth.signOut(); currentUser = null; window.location.reload(); });
-
-        // --- DASHBOARD DATA ---
-        async function loadDashboardData() {
-            const { count: prodCount } = await supabaseClient.from('epsilon_products').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id);
-            const { count: staffCount } = await supabaseClient.from('epsilon_staff').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id);
-            const { count: clientCount } = await supabaseClient.from('epsilon_clients').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id);
-
-            // Simple Revenue Est: Sum of all product prices * 10 (simulated sales)
-            const { data: prods } = await supabaseClient.from('epsilon_products').select('price').eq('user_id', currentUser.id);
-            let estRev = 0;
-            if (prods) prods.forEach(p => estRev += (p.price * 10));
-
-            document.getElementById('statProducts').textContent = prodCount || 0;
-            document.getElementById('statStaff').textContent = staffCount || 0;
-            document.getElementById('statClients').textContent = clientCount || 0;
-            document.getElementById('statRevenue').textContent = 'Ksh ' + estRev.toLocaleString();
-
-            updateCharts(prodCount || 0, clientCount || 0, staffCount || 0);
+        function showDeliveryModal() {
+            modalTitle.innerText = "Add Delivery";
+            modalContent.innerHTML = `
+                <form onsubmit="handleDeliverySubmit(event)" class="space-y-4">
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Tracking ID</label><input name="tracking_id" type="text" class="input-field" required></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Customer Name</label><input name="customer_name" type="text" class="input-field"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Location</label><input name="location" type="text" class="input-field"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Delivery Date</label><input name="delivery_date" type="date" class="input-field"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select name="status" class="input-field">
+                            <option value="pending">Pending</option>
+                            <option value="in_transit">In Transit</option>
+                            <option value="delivered">Delivered</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg">Save Delivery</button>
+                </form>
+            `;
+            modalContainer.classList.remove('hidden');
         }
 
-        function updateCharts(prodCount, clientCount, staffCount) {
-            // Products Pie Chart
-            const pCtx = document.getElementById('productChart').getContext('2d');
-            if (productivityChart) productivityChart.destroy();
-            productivityChart = new Chart(pCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Products', 'Services', 'Clients'],
-                    datasets: [{
-                        data: [prodCount, Math.floor(prodCount / 2) + 2, clientCount],
-                        backgroundColor: ['#0284c7', '#6366f1', '#10b981'],
-                        borderWidth: 0
-                    }]
-                },
-                options: { responsive: true, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+        async function handleDeliverySubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const { error } = await supabaseClient.from('deliveries').insert([{
+                user_id: currentUser.id,
+                tracking_id: formData.get('tracking_id'),
+                customer_name: formData.get('customer_name'),
+                location: formData.get('location'),
+                delivery_date: formData.get('delivery_date'),
+                status: formData.get('status')
+            }]);
+            if (error) alert(error.message);
+            else {
+                closeModal();
+                loadDeliveries();
+            }
+        }
+
+        async function deleteDelivery(id) {
+            if (confirm("Delete this delivery?")) {
+                await supabaseClient.from('deliveries').delete().eq('id', id);
+                loadDeliveries();
+            }
+        }
+
+        async function loadEmployees() {
+            const { data: employees, error } = await supabaseClient.from('employees').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+            const tbody = document.getElementById('employeesList');
+            tbody.innerHTML = '';
+
+            if (error) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-red-500">Error loading employees. Did you create the SQL table?</td></tr>';
+                return;
+            }
+            if (!employees || employees.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">No employees found.</td></tr>';
+                return;
+            }
+            employees.forEach(e => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-gray-100 hover:bg-gray-50';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-medium text-gray-800">${e.name || 'N/A'}</td>
+                    <td class="py-3 px-4 text-gray-600">${e.position || 'N/A'}</td>
+                    <td class="py-3 px-4 text-gray-600">${e.department || 'N/A'}</td>
+                    <td class="py-3 px-4 text-gray-600">${e.email || 'N/A'}</td>
+                    <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-bold ${e.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">${e.status}</span></td>
+                    <td class="py-3 px-4 flex gap-2">
+                        <button onclick="deleteEmployee(${e.id})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
             });
-
-            // Staff Bar Chart
-            const sCtx = document.getElementById('staffChart').getContext('2d');
-            if (staffChart) staffChart.destroy();
-            staffChart = new Chart(sCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Active', 'On Leave', 'Remote'],
-                    datasets: [{
-                        label: 'Staff Count',
-                        data: [staffCount, Math.floor(staffCount / 5), Math.floor(staffCount / 2)],
-                        backgroundColor: '#6366f1',
-                        borderRadius: 6
-                    }]
-                },
-                options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
-            });
+            lucide.createIcons();
         }
+
+        function showEmployeeModal() {
+            modalTitle.innerText = "Add Employee";
+            modalContent.innerHTML = `
+                <form onsubmit="handleEmployeeSubmit(event)" class="space-y-4">
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Name</label><input name="name" type="text" class="input-field" required></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Position</label><input name="position" type="text" class="input-field"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Department</label><input name="department" type="text" class="input-field"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Email</label><input name="email" type="email" class="input-field"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select name="status" class="input-field">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="on_leave">On Leave</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg">Save Employee</button>
+                </form>
+            `;
+            modalContainer.classList.remove('hidden');
+        }
+
+        async function handleEmployeeSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const { error } = await supabaseClient.from('employees').insert([{
+                user_id: currentUser.id,
+                name: formData.get('name'),
+                position: formData.get('position'),
+                department: formData.get('department'),
+                email: formData.get('email'),
+                status: formData.get('status')
+            }]);
+            if (error) alert(error.message);
+            else {
+                closeModal();
+                loadEmployees();
+            }
+        }
+
+        async function deleteEmployee(id) {
+            if (confirm("Delete this employee?")) {
+                await supabaseClient.from('employees').delete().eq('id', id);
+                loadEmployees();
+            }
+        }
+
+        async function loadFacilities() {
+            const { data: facilities, error } = await supabaseClient.from('facilities').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+            const tbody = document.getElementById('facilitiesList');
+            tbody.innerHTML = '';
+
+            if (error) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-red-500">Error loading facilities. Did you create the SQL table?</td></tr>';
+                return;
+            }
+            if (!facilities || facilities.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">No facilities found.</td></tr>';
+                return;
+            }
+            facilities.forEach(f => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-gray-100 hover:bg-gray-50';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-medium text-gray-800">${f.name || 'N/A'}</td>
+                    <td class="py-3 px-4 text-gray-600">${f.type || 'N/A'}</td>
+                    <td class="py-3 px-4 text-gray-600">${f.location || 'N/A'}</td>
+                    <td class="py-3 px-4 text-gray-600">${f.capacity || 'N/A'}</td>
+                    <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-bold ${f.status === 'available' ? 'bg-green-100 text-green-700' : f.status === 'maintenance' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}">${f.status}</span></td>
+                    <td class="py-3 px-4 flex gap-2">
+                        <button onclick="deleteFacility(${f.id})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function showFacilityModal() {
+            modalTitle.innerText = "Add Facility";
+            modalContent.innerHTML = `
+                <form onsubmit="handleFacilitySubmit(event)" class="space-y-4">
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Facility Name</label><input name="name" type="text" class="input-field" required></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Type</label><input name="type" type="text" placeholder="e.g. Warehouse, Office" class="input-field"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Location</label><input name="location" type="text" class="input-field"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Capacity</label><input name="capacity" type="text" placeholder="e.g. 500 sq ft" class="input-field"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select name="status" class="input-field">
+                            <option value="available">Available</option>
+                            <option value="in_use">In Use</option>
+                            <option value="maintenance">Maintenance</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg">Save Facility</button>
+                </form>
+            `;
+            modalContainer.classList.remove('hidden');
+        }
+
+        async function handleFacilitySubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const { error } = await supabaseClient.from('facilities').insert([{
+                user_id: currentUser.id,
+                name: formData.get('name'),
+                type: formData.get('type'),
+                location: formData.get('location'),
+                capacity: formData.get('capacity'),
+                status: formData.get('status')
+            }]);
+            if (error) alert(error.message);
+            else {
+                closeModal();
+                loadFacilities();
+            }
+        }
+
+        async function deleteFacility(id) {
+            if (confirm("Delete this facility?")) {
+                await supabaseClient.from('facilities').delete().eq('id', id);
+                loadFacilities();
+            }
+        }
+
+        const toggleBtn = document.getElementById('ai-toggle-btn');
+        const closeBtn = document.getElementById('ai-close-btn');
+        const modal = document.getElementById('ai-modal');
+        const header = document.getElementById('ai-header');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const messagesContainer = document.getElementById('chat-messages');
+        const sendBtn = document.getElementById('send-btn');
+        let isChatOpen = false;
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+
+        function toggleChat() {
+            isChatOpen = !isChatOpen;
+            if (isChatOpen) {
+                modal.classList.remove('hidden');
+                setTimeout(() => { chatInput.focus(); }, 50);
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        toggleBtn.addEventListener('click', toggleChat);
+        closeBtn.addEventListener('click', toggleChat);
+
+        header.addEventListener('mousedown', (e) => {
+            if (e.target.closest('button')) return;
+            isDragging = true;
+            const rect = modal.getBoundingClientRect();
+            dragOffset.x = e.clientX - rect.left;
+            dragOffset.y = e.clientY - rect.top;
+            modal.style.bottom = 'auto';
+            modal.style.right = 'auto';
+            modal.style.left = rect.left + 'px';
+            modal.style.top = rect.top + 'px';
+            modal.style.transition = 'none';
+            header.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            let newX = e.clientX - dragOffset.x;
+            let newY = e.clientY - dragOffset.y;
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const modalWidth = modal.offsetWidth;
+            const modalHeight = modal.offsetHeight;
+
+            if (newX < 0) newX = 0;
+            if (newX + modalWidth > viewportWidth) newX = viewportWidth - modalWidth;
+            if (newY < 0) newY = 0;
+            if (newY + modalHeight > viewportHeight) newY = viewportHeight - modalHeight;
+
+            modal.style.left = `${newX}px`;
+            modal.style.top = `${newY}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                modal.style.transition = '';
+                header.style.cursor = 'move';
+            }
+        });
+
+        function appendMessage(text, isUser = false) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex gap-2 ${isUser ? 'flex-row-reverse' : ''}`;
+            const avatar = document.createElement('div');
+            avatar.className = `w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isUser ? 'bg-gray-200 text-gray-600' : 'bg-blue-100 text-blue-600'}`;
+            avatar.innerHTML = isUser ? '<i data-lucide="user" class="w-4 h-4"></i>' : '<i data-lucide="bot" class="w-4 h-4"></i>';
+            const bubble = document.createElement('div');
+            bubble.className = `msg-bubble p-3 rounded-2xl text-sm shadow-sm ${isUser ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white border border-gray-200 text-gray-700 rounded-tl-none'}`;
+            bubble.textContent = text;
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(bubble);
+            messagesContainer.appendChild(wrapper);
+            lucide.createIcons();
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function showTyping() {
+            const wrapper = document.createElement('div');
+            wrapper.id = 'typing-indicator';
+            wrapper.className = 'flex gap-2';
+            const avatar = document.createElement('div');
+            avatar.className = 'w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 text-blue-600';
+            avatar.innerHTML = '<i data-lucide="bot" class="w-4 h-4"></i>';
+            const bubble = document.createElement('div');
+            bubble.className = 'bg-white border border-gray-200 p-3 rounded-2xl rounded-tl-none text-gray-500 flex gap-1 items-center h-10';
+            for (let i = 0; i < 3; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'w-1.5 h-1.5 bg-gray-400 rounded-full typing-dot';
+                bubble.appendChild(dot);
+            }
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(bubble);
+            messagesContainer.appendChild(wrapper);
+            lucide.createIcons();
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function removeTyping() {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) indicator.remove();
+        }
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = chatInput.value.trim();
+            if (!text) return;
+            appendMessage(text, true);
+            chatInput.value = '';
+            chatInput.disabled = true;
+            sendBtn.disabled = true;
+            showTyping();
+            try {
+                const prompt = encodeURIComponent("Act as a helpful business assistant for Epsilon Azure. " + text);
+                const response = await fetch(`https://text.pollinations.ai/${prompt}`);
+                if (!response.ok) throw new Error('API request failed');
+                const aiText = await response.text();
+                removeTyping();
+                appendMessage(aiText, false);
+            } catch (error) {
+                removeTyping();
+                console.error(error);
+                appendMessage("Sorry, I couldn't connect to the AI. Please try again.", false);
+            } finally {
+                chatInput.disabled = false;
+                sendBtn.disabled = false;
+                chatInput.focus();
+            }
+        });
 
         checkSession();
     </script>
