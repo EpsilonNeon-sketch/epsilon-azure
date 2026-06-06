@@ -21,7 +21,21 @@
     <link rel="icon" href="./icon.png">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* Animation for promo modal load-in */
+#epsilon-promo-modal:not(.hidden) .glass {
+    animation: promoPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
 
+@keyframes promoPop {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
         /* The Chat Window */
         #ai-modal {
             transition: opacity 0.2s ease, transform 0.2s ease;
@@ -1428,6 +1442,97 @@
 
         checkSession();
     </script>
+    <!-- Epsilon Website Promo Dialog -->
+<div id="epsilon-promo-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black bg-opacity-60 p-4 backdrop-blur-sm">
+    <div class="glass max-w-md w-full p-6 rounded-2xl bg-white shadow-2xl transform transition-all scale-95 duration-300">
+        <!-- Step 1: Initial Question -->
+        <div id="promo-step-1" class="text-center">
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mx-auto mb-4">
+                <i data-lucide="globe" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Do you have a website for your business?</h3>
+            <p class="text-sm text-gray-500 mb-6">Let us know to optimize your Epsilon Azure dashboard experience.</p>
+            <div class="flex gap-4 justify-center">
+                <button id="promo-yes-btn" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2.5 px-6 rounded-xl transition">
+                    Yes, I do
+                </button>
+                <button id="promo-no-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-xl transition shadow-md shadow-blue-200">
+                    No, I don't
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Pitch Section (Hidden by default) -->
+        <div id="promo-step-2" class="text-center hidden">
+            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 mx-auto mb-4">
+                <i data-lucide="sparkles" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Grow Your Brand Online!</h3>
+            <p class="text-sm text-gray-500 mb-6">Get a professional, high-performance website built directly inside the Epsilon ecosystem.</p>
+            <div class="flex flex-col gap-3">
+                <a href="https://epsilon-panel.vercel.app" target="_blank" id="promo-order-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition text-center shadow-md shadow-blue-200 flex items-center justify-center gap-2">
+                    <span>Order in Epsilon Panel</span>
+                    <i data-lucide="external-link" class="w-4 h-4"></i>
+                </a>
+                <button id="promo-close-btn" class="text-sm text-gray-400 hover:text-gray-600 transition underline py-1">
+                    Maybe later
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+  // Epsilon Promo Dialog Controller
+function initEpsilonPromo() {
+    const promoModal = document.getElementById('epsilon-promo-modal');
+    const step1 = document.getElementById('promo-step-1');
+    const step2 = document.getElementById('promo-step-2');
+    
+    const yesBtn = document.getElementById('promo-yes-btn');
+    const noBtn = document.getElementById('promo-no-btn');
+    const closeBtn = document.getElementById('promo-close-btn');
+    const orderBtn = document.getElementById('promo-order-btn');
+
+    // Check localStorage to see if they already answered 'yes' or bought one
+    const hasWebsiteConfigured = localStorage.getItem('epsilon_has_business_website');
+
+    if (hasWebsiteConfigured === 'true') {
+        return; // Say less, don't show it again
+    }
+
+    // Trigger the modal to open
+    promoModal.classList.remove('hidden');
+    if (window.lucide) window.lucide.createIcons(); // Hydrate icons inside modal
+
+    // User clicks "Yes, I do"
+    yesBtn.addEventListener('click', () => {
+        localStorage.setItem('epsilon_has_business_website', 'true');
+        promoModal.classList.add('hidden');
+    });
+
+    // User clicks "No, I don't" -> Show Pitch
+    noBtn.addEventListener('click', () => {
+        step1.classList.add('hidden');
+        step2.classList.remove('hidden');
+        if (window.lucide) window.lucide.createIcons();
+    });
+
+    // User decides to order -> Save status and close modal
+    orderBtn.addEventListener('click', () => {
+        localStorage.setItem('epsilon_has_business_website', 'true'); // Prevents annoying re-popups after redirect
+        promoModal.classList.add('hidden');
+    });
+
+    // Close on "Maybe later"
+    closeBtn.addEventListener('click', () => {
+        promoModal.classList.add('hidden');
+    });
+}
+
+// Call this inside your existing checkSession setup or page load listener
+// For example, trigger it after a user successfully logs in:
+setTimeout(initEpsilonPromo, 1500); // 1.5s delay so it doesn't slap them instantly on load
+</script>
 </body>
 
 </html>
