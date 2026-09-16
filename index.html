@@ -203,86 +203,79 @@
             </form>
         </div>
     </div>
-    <!-- WELCOME OVERLAY (First Login) -->
-<div id="welcome-modal" class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center fade-in relative overflow-hidden">
-        <!-- Decorative Top Line -->
-        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 to-blue-600"></div>
+    <!-- FEEDBACK PROMPT OVERLAY -->
+<div id="feedback-modal" class="fixed inset-0 z-[50] bg-black/40 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center fade-in relative overflow-hidden border border-slate-100 transform transition-all duration-300 translate-y-0">
         
+        <!-- Close / Dismiss -->
+        <button id="close-feedback" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+
         <!-- Icon -->
-        <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-600 shadow-inner">
-            <i data-lucide="rocket" class="w-8 h-8"></i>
-        </div>
-        
-        <!-- Text -->
-        <h2 class="text-2xl font-bold text-slate-800 mb-2">Welcome to Epsilon Azure!</h2>
-        <p class="text-slate-500 mb-6 text-sm leading-relaxed">
-            Your business command center is ready. Here is what you can do right now to get started:
-        </p>
-        
-        <!-- Feature List -->
-        <div class="space-y-3 text-left bg-slate-50 p-4 rounded-xl mb-6 border border-slate-100">
-            <div class="flex items-center gap-3">
-                <div class="p-1.5 bg-white rounded text-blue-600 shadow-sm"><i data-lucide="users" class="w-4 h-4"></i></div>
-                <span class="text-sm font-medium text-slate-700">Add your first customer</span>
-            </div>
-            <div class="flex items-center gap-3">
-                <div class="p-1.5 bg-white rounded text-blue-600 shadow-sm"><i data-lucide="package" class="w-4 h-4"></i></div>
-                <span class="text-sm font-medium text-slate-700">Register company assets</span>
-            </div>
-            <div class="flex items-center gap-3">
-                <div class="p-1.5 bg-white rounded text-blue-600 shadow-sm"><i data-lucide="layout-dashboard" class="w-4 h-4"></i></div>
-                <span class="text-sm font-medium text-slate-700">View your live dashboard</span>
-            </div>
+        <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i data-lucide="lightbulb" class="w-6 h-6"></i>
         </div>
 
-        <!-- Action Button -->
-        <button id="dismiss-welcome" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition shadow-lg shadow-blue-200">
-            Let's Get Started
+        <!-- Content -->
+        <h3 class="text-lg font-bold text-slate-800 mb-2">Have ideas?</h3>
+        <p class="text-sm text-slate-500 mb-5 leading-relaxed">
+            We are constantly improving Epsilon Azure. Visit our contribution portal to suggest new features or report bugs.
+        </p>
+
+        <!-- Action Buttons -->
+        <a href="https://e-psilon.vercel.app/#contributions" target="_blank" class="block w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-lg transition mb-3 text-sm">
+            Go to Contributions
+        </a>
+        
+        <button id="dismiss-feedback-btn" class="text-xs text-slate-400 hover:text-slate-600 font-medium">
+            Maybe later
         </button>
     </div>
 </div>
 <script>
-  // --- WELCOME SCREEN LOGIC ---
+  // --- FEEDBACK PROMPT LOGIC ---
 
-// Call this function inside your 'showApp()' function
-function checkWelcomeScreen() {
-    // Check if user has seen the welcome message before
-    const hasSeenWelcome = localStorage.getItem('epsilon-welcome-seen');
+function checkFeedbackPrompt() {
+    // Check if user has already dismissed the feedback prompt
+    const hasSeenPrompt = localStorage.getItem('epsilon-feedback-prompt-seen');
 
-    if (!hasSeenWelcome) {
-        // Show the modal
-        const modal = document.getElementById('welcome-modal');
-        if (modal) {
-            modal.classList.remove('hidden');
-            lucide.createIcons(); // Refresh icons
-        }
+    if (!hasSeenPrompt) {
+        // Wait 1.5 seconds after dashboard load so it doesn't clash with the Welcome screen
+        setTimeout(() => {
+            const modal = document.getElementById('feedback-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                lucide.createIcons(); // Refresh icons inside the modal
+            }
+        }, 1500);
     }
 }
 
-// Handle the "Get Started" button click
+// Event Listeners for Feedback Modal
 document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('dismiss-welcome');
-    if (btn) {
-        btn.addEventListener('click', () => {
-            // Mark as seen
-            localStorage.setItem('epsilon-welcome-seen', 'true');
-            
-            // Hide modal with a nice fade out effect
-            const modal = document.getElementById('welcome-modal');
+    const closeBtn = document.getElementById('close-feedback');
+    const dismissBtn = document.getElementById('dismiss-feedback-btn');
+    const modal = document.getElementById('feedback-modal');
+
+    const hideModal = () => {
+        // Mark as seen
+        localStorage.setItem('epsilon-feedback-prompt-seen', 'true');
+        
+        // Animate out
+        if (modal) {
             modal.style.opacity = '0';
-            modal.style.transition = 'opacity 0.3s ease-out';
-            
             setTimeout(() => {
                 modal.classList.add('hidden');
-                modal.style.opacity = ''; // Reset for next time
-                modal.style.transition = '';
+                modal.style.opacity = ''; // Reset
             }, 300);
-        });
-    }
+        }
+    };
+
+    if (closeBtn) closeBtn.addEventListener('click', hideModal);
+    if (dismissBtn) dismissBtn.addEventListener('click', hideModal);
 });
 </script>
-
         <script>
         // --- 1. SUPABASE SETUP ---
         const { createClient } = supabase;
@@ -899,7 +892,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
-        checkWelcomeScreen();
+        checkFeedbackPrompt();
     </script>
 </body>
 </html>
