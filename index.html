@@ -203,6 +203,85 @@
             </form>
         </div>
     </div>
+    <!-- WELCOME OVERLAY (First Login) -->
+<div id="welcome-modal" class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center fade-in relative overflow-hidden">
+        <!-- Decorative Top Line -->
+        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 to-blue-600"></div>
+        
+        <!-- Icon -->
+        <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-600 shadow-inner">
+            <i data-lucide="rocket" class="w-8 h-8"></i>
+        </div>
+        
+        <!-- Text -->
+        <h2 class="text-2xl font-bold text-slate-800 mb-2">Welcome to Epsilon Azure!</h2>
+        <p class="text-slate-500 mb-6 text-sm leading-relaxed">
+            Your business command center is ready. Here is what you can do right now to get started:
+        </p>
+        
+        <!-- Feature List -->
+        <div class="space-y-3 text-left bg-slate-50 p-4 rounded-xl mb-6 border border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="p-1.5 bg-white rounded text-blue-600 shadow-sm"><i data-lucide="users" class="w-4 h-4"></i></div>
+                <span class="text-sm font-medium text-slate-700">Add your first customer</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="p-1.5 bg-white rounded text-blue-600 shadow-sm"><i data-lucide="package" class="w-4 h-4"></i></div>
+                <span class="text-sm font-medium text-slate-700">Register company assets</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="p-1.5 bg-white rounded text-blue-600 shadow-sm"><i data-lucide="layout-dashboard" class="w-4 h-4"></i></div>
+                <span class="text-sm font-medium text-slate-700">View your live dashboard</span>
+            </div>
+        </div>
+
+        <!-- Action Button -->
+        <button id="dismiss-welcome" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition shadow-lg shadow-blue-200">
+            Let's Get Started
+        </button>
+    </div>
+</div>
+<script>
+  // --- WELCOME SCREEN LOGIC ---
+
+// Call this function inside your 'showApp()' function
+function checkWelcomeScreen() {
+    // Check if user has seen the welcome message before
+    const hasSeenWelcome = localStorage.getItem('epsilon-welcome-seen');
+
+    if (!hasSeenWelcome) {
+        // Show the modal
+        const modal = document.getElementById('welcome-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            lucide.createIcons(); // Refresh icons
+        }
+    }
+}
+
+// Handle the "Get Started" button click
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('dismiss-welcome');
+    if (btn) {
+        btn.addEventListener('click', () => {
+            // Mark as seen
+            localStorage.setItem('epsilon-welcome-seen', 'true');
+            
+            // Hide modal with a nice fade out effect
+            const modal = document.getElementById('welcome-modal');
+            modal.style.opacity = '0';
+            modal.style.transition = 'opacity 0.3s ease-out';
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.style.opacity = ''; // Reset for next time
+                modal.style.transition = '';
+            }, 300);
+        });
+    }
+});
+</script>
 
         <script>
         // --- 1. SUPABASE SETUP ---
@@ -820,6 +899,7 @@
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
+        checkWelcomeScreen();
     </script>
 </body>
 </html>
