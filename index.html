@@ -3,896 +3,1019 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Epsilon Azure | BMS Tool</title>
-    
-    <!-- Tailwind CSS -->
+    <title>Epsilon Azure — BMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: {
-                        azure: {
-                            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc',
-                            400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1',
-                            800: '#075985', 900: '#0c4a6e',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background-color: #f8fafc; }
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        /* Loading Spinner */
-        .loader {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #0284c7;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        :root{--blue:#2563eb;--blue-light:#3b82f6;--blue-dark:#1d4ed8;--blue-deeper:#1e40af;}
+        *{font-family:'Inter',sans-serif;box-sizing:border-box;}
+        body{background:#f0f4ff;color:#1e293b;margin:0;}
+        .bg-mesh{position:fixed;inset:0;z-index:-1;background-image:radial-gradient(at 0% 0%,rgba(37,99,235,.12) 0,transparent 50%),radial-gradient(at 100% 100%,rgba(59,130,246,.1) 0,transparent 50%),radial-gradient(at 50% 0%,rgba(96,165,250,.08) 0,transparent 50%);}
+        .glass{background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border:1px solid rgba(37,99,235,.12);box-shadow:0 4px 6px -1px rgba(0,0,0,.04),0 2px 4px -1px rgba(0,0,0,.02);}
+        .sidebar{position:fixed;left:0;top:0;height:100vh;width:260px;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);border-right:1px solid rgba(37,99,235,.15);transition:transform .3s ease;z-index:100;overflow-y:auto;}
+        .sidebar.closed{transform:translateX(-100%);}
+        .main-content{margin-left:260px;transition:margin-left .3s ease;padding:1.5rem 2rem;}
+        .main-content.expanded{margin-left:0;}
+        .menu-toggle{position:fixed;top:1rem;left:1rem;z-index:101;background:var(--blue);border:none;padding:.65rem;border-radius:.5rem;cursor:pointer;color:#fff;box-shadow:0 4px 6px rgba(37,99,235,.3);transition:all .2s;}
+        .menu-toggle:hover{background:var(--blue-dark);}
+        .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.15);z-index:99;display:none;}
+        .sidebar-overlay.active{display:block;}
+        .input-field{width:100%;border-radius:.5rem;padding:.65rem .9rem;background:#f8fafc;border:1px solid #cbd5e1;transition:all .2s;font-size:.875rem;}
+        .input-field:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(37,99,235,.15);}
+        .page{display:none;}.page.active{display:flex;}
+        #authPage{position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;}
+        #dashboardPage{display:none;}#dashboardPage.active{display:block;}
+        .nav-btn.active{background:#eff6ff;color:var(--blue);font-weight:600;}
+        .nav-btn.active i{color:var(--blue);}
+        .data-card{transition:all .2s;}.data-card:hover{transform:translateY(-2px);box-shadow:0 8px 25px -5px rgba(37,99,235,.12);}
+        .stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;}
+        .section{display:none;}.section.active{display:block;}
+        .badge{display:inline-flex;align-items:center;padding:2px 10px;border-radius:9999px;font-size:.7rem;font-weight:600;letter-spacing:.02em;}
+        .badge-active{background:#dbeafe;color:#1d4ed8;}.badge-pending{background:#fef3c7;color:#92400e;}.badge-completed{background:#d1fae5;color:#065f46;}.badge-inactive{background:#fee2e2;color:#991b1b;}.badge-discontinued{background:#e2e8f0;color:#475569;}
+        .field-label{font-size:.7rem;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;}
+        .field-value{font-size:.875rem;color:#1e293b;font-weight:500;}
+        ::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:#f1f5f9;border-radius:4px;}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}::-webkit-scrollbar-thumb:hover{background:#94a3b8;}
+        @media(max-width:768px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.main-content{margin-left:0;padding:1rem;}}
+        .toast{position:fixed;top:1.5rem;right:1.5rem;z-index:300;padding:.75rem 1.25rem;border-radius:.75rem;font-size:.875rem;font-weight:500;box-shadow:0 10px 25px rgba(0,0,0,.12);transform:translateX(120%);transition:transform .3s ease;}
+        .toast.show{transform:translateX(0);}.toast-success{background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;}.toast-error{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;}
+        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:250;display:flex;align-items:center;justify-content:center;}
+        .modal-box{background:#fff;border-radius:1rem;padding:2rem;max-width:600px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15);}
     </style>
 </head>
-<body class="text-slate-700 h-screen overflow-hidden flex flex-col">
+<body class="min-h-screen">
+<div class="bg-mesh"></div>
+<div id="toastEl" class="toast toast-success"></div>
 
-    <!-- Toast Notification -->
-    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2"></div>
+<button id="menuToggle" class="menu-toggle hidden"><i data-lucide="menu" class="w-5 h-5"></i></button>
+<div id="sidebarOverlay" class="sidebar-overlay"></div>
 
-    <!-- AUTH SCREEN -->
-    <div id="auth-screen" class="fixed inset-0 z-50 bg-gradient-to-br from-white to-blue-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-xl border border-blue-100 w-full max-w-md p-8 fade-in">
+<!-- Sidebar -->
+<aside id="sidebar" class="sidebar closed">
+    <div class="p-6">
+        <div class="flex items-center justify-between mb-8">
+            <h2 class="text-xl font-bold text-slate-800">EPSILON<span style="color:var(--blue)"> AZURE</span></h2>
+            <button id="closeSidebar" class="md:hidden text-slate-400 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <nav class="space-y-1">
+            <button class="nav-btn w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-slate-600 text-sm" data-page="dashboard"><i data-lucide="layout-dashboard" class="w-[18px] h-[18px]"></i><span>Dashboard</span></button>
+            <button class="nav-btn w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-slate-600 text-sm" data-page="products"><i data-lucide="package" class="w-[18px] h-[18px]"></i><span>Products</span></button>
+            <button class="nav-btn w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-slate-600 text-sm" data-page="expenses"><i data-lucide="receipt" class="w-[18px] h-[18px]"></i><span>Expenses</span></button>
+            <button class="nav-btn w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-slate-600 text-sm" data-page="services"><i data-lucide="wrench" class="w-[18px] h-[18px]"></i><span>Services</span></button>
+            <button class="nav-btn w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-slate-600 text-sm" data-page="employees"><i data-lucide="users" class="w-[18px] h-[18px]"></i><span>Employees</span></button>
+            <button class="nav-btn w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-slate-600 text-sm" data-page="assets"><i data-lucide="monitor" class="w-[18px] h-[18px]"></i><span>Assets</span></button>
+            <button class="nav-btn w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-slate-600 text-sm" data-page="charts"><i data-lucide="bar-chart-3" class="w-[18px] h-[18px]"></i><span>Analytics</span></button>
+        </nav>
+        <div class="mt-6 pt-4 border-t border-slate-200">
+            <button id="logoutBtn" class="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-red-50 hover:text-red-600 transition text-left text-slate-600 text-sm"><i data-lucide="log-out" class="w-[18px] h-[18px]"></i><span>Logout</span></button>
+        </div>
+    </div>
+</aside>
+
+<!-- Auth Page -->
+<div id="authPage" class="page active px-6">
+    <div class="max-w-md w-full">
+        <div class="glass p-8 rounded-2xl">
             <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-blue-600 text-white mb-4 shadow-lg shadow-blue-200">
-                    <i data-lucide="box" class="w-6 h-6"></i>
-                </div>
-                <h1 class="text-2xl font-bold text-slate-800">Epsilon Azure</h1>
-                <p class="text-slate-500 text-sm mt-1">Business Management System</p>
+                <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style="background:linear-gradient(135deg,var(--blue),var(--blue-light))"><i data-lucide="cloud" class="w-8 h-8 text-white"></i></div>
+                <h1 class="text-2xl font-bold text-slate-800 mb-1">EPSILON<span style="color:var(--blue)"> AZURE</span></h1>
+                <p class="text-slate-400 text-sm">Business Management System</p>
             </div>
-
-            <!-- Login Form -->
-            <form id="login-form" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Email</label>
-                    <input type="email" id="login-email" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition" placeholder="you@company.com" required>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Password</label>
-                    <input type="password" id="login-password" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition" placeholder="••••••••" required>
-                </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition shadow-lg shadow-blue-200">Sign In</button>
+            <form id="loginForm" class="space-y-4">
+                <h2 class="text-lg font-bold text-slate-800 mb-2">Sign In</h2>
+                <input id="loginEmail" type="email" placeholder="Email Address" class="input-field" required>
+                <input id="loginPassword" type="password" placeholder="Password" class="input-field" required>
+                <button type="submit" class="w-full text-white font-medium py-2.5 rounded-lg transition shadow-md" style="background:var(--blue)">Sign In</button>
+                <p class="text-center text-sm text-slate-400 mt-2">No account? <a href="#" id="showSignup" class="font-semibold hover:underline" style="color:var(--blue)">Sign Up</a></p>
+                <p id="loginError" class="text-red-500 text-sm text-center hidden"></p>
             </form>
-
-            <div class="mt-6 text-center">
-                <p class="text-sm text-slate-500">Don't have a business account?</p>
-                <button onclick="toggleAuthMode()" class="text-blue-600 font-semibold text-sm hover:underline">Create Business Account</button>
-            </div>
-        </div>
-
-        <!-- Signup Form -->
-        <div id="signup-form-container" class="hidden bg-white rounded-2xl shadow-xl border border-blue-100 w-full max-w-md p-8 fade-in absolute">
-            <div class="text-center mb-6">
-                <h2 class="text-xl font-bold text-slate-800">Register Business</h2>
-            </div>
-            <form id="signup-form" class="space-y-3">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Business Name</label>
-                    <input type="text" id="signup-biz-name" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition" required>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Email</label>
-                    <input type="email" id="signup-email" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition" required>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Password</label>
-                    <input type="password" id="signup-password" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition" required>
-                </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition shadow-lg shadow-blue-200">Sign Up & Setup</button>
-            </form>
-            <button onclick="toggleAuthMode()" class="mt-4 w-full text-center text-sm text-slate-500 hover:text-blue-600">Back to Login</button>
-        </div>
-    </div>
-
-    <!-- MAIN APP -->
-    <div id="app-layout" class="flex h-screen hidden">
-        
-        <!-- Sidebar -->
-        <aside class="w-64 bg-white border-r border-slate-200 flex flex-col shadow-sm z-10">
-            <div class="p-6 flex items-center gap-3 border-b border-slate-100">
-                <div class="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white">
-                    <i data-lucide="box" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-slate-800 tracking-tight">Epsilon Azure</h1>
-                    <p class="text-[10px] text-blue-500 font-bold uppercase tracking-wider">BMS Tool</p>
-                </div>
-            </div>
-
-            <nav class="flex-1 overflow-y-auto p-4 space-y-1">
-                <button onclick="router('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 transition">
-                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
-                </button>
-                <button onclick="router('customers')" id="nav-customers" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition">
-                    <i data-lucide="users" class="w-4 h-4"></i> Customers
-                </button>
-                <button onclick="router('employees')" id="nav-employees" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition">
-                    <i data-lucide="user-cog" class="w-4 h-4"></i> Employees
-                </button>
-                <button onclick="router('assets')" id="nav-assets" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition">
-                    <i data-lucide="package" class="w-4 h-4"></i> Assets
-                </button>
-                <button onclick="router('products')" id="nav-products" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition">
-                    <i data-lucide="shopping-bag" class="w-4 h-4"></i> Products
-                </button>
-                <button onclick="router('services')" id="nav-services" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition">
-                    <i data-lucide="wrench" class="w-4 h-4"></i> Services
-                </button>
-                <button onclick="router('delivery')" id="nav-delivery" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition">
-                    <i data-lucide="truck" class="w-4 h-4"></i> Delivery
-                </button>
-            </nav>
-
-            <div class="p-4 border-t border-slate-100">
-                <button onclick="router('settings')" id="nav-settings" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition">
-                    <i data-lucide="settings" class="w-4 h-4"></i> Settings
-                </button>
-                <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-500 rounded-lg hover:bg-red-50 transition mt-1">
-                    <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
-                </button>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="flex-1 bg-slate-50 overflow-auto relative">
-            <!-- Header -->
-            <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
-                <div>
-                    <h2 id="page-title" class="text-lg font-bold text-slate-800">Dashboard</h2>
-                    <p id="page-subtitle" class="text-xs text-slate-500">Overview of your business</p>
-                </div>
-                <div class="flex items-center gap-4">
-                    <div class="text-right hidden sm:block">
-                        <p id="header-biz-name" class="text-sm font-bold text-slate-800">Loading...</p>
-                        <p id="header-user-email" class="text-xs text-slate-500">user@example.com</p>
-                    </div>
-                    <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center border border-blue-200">
-                        <i data-lucide="building-2" class="w-5 h-5"></i>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Dynamic Content Container -->
-            <div id="content-area" class="p-8 max-w-7xl mx-auto">
-                <!-- Content injected via JS -->
-            </div>
-        </main>
-    </div>
-
-    <!-- GENERIC MODAL FOR ADDING ITEMS -->
-    <div id="item-modal" class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 fade-in">
-            <h3 id="modal-title" class="text-lg font-bold text-slate-800 mb-4">Add New Item</h3>
-            <form id="modal-form" class="space-y-4">
-                <input type="hidden" id="modal-table-name">
-                <!-- Dynamic Inputs generated by JS -->
-                <div id="modal-fields" class="space-y-3"></div>
-                
-                <div class="flex justify-end gap-3 mt-6">
-                    <button type="button" onclick="closeModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium text-sm">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm shadow-lg shadow-blue-200">Save Item</button>
-                </div>
+            <form id="signupForm" class="space-y-4 hidden">
+                <h2 class="text-lg font-bold text-slate-800 mb-2">Sign Up</h2>
+                <input id="signupEmail" type="email" placeholder="Email Address" class="input-field" required>
+                <input id="signupPassword" type="password" placeholder="Create Password (min 6 chars)" class="input-field" required>
+                <button type="submit" class="w-full text-white font-medium py-2.5 rounded-lg transition shadow-md" style="background:var(--blue)">Create Account</button>
+                <p class="text-center text-sm text-slate-400 mt-2">Have an account? <a href="#" id="showLogin" class="font-semibold hover:underline" style="color:var(--blue)">Sign In</a></p>
+                <p id="signupError" class="text-red-500 text-sm text-center hidden"></p>
             </form>
         </div>
-    </div>
-    <!-- FEEDBACK PROMPT OVERLAY -->
-<div id="feedback-modal" class="fixed inset-0 z-[50] bg-black/40 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center fade-in relative overflow-hidden border border-slate-100 transform transition-all duration-300 translate-y-0">
-        
-        <!-- Close / Dismiss -->
-        <button id="close-feedback" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600">
-            <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
-
-        <!-- Icon -->
-        <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i data-lucide="lightbulb" class="w-6 h-6"></i>
-        </div>
-
-        <!-- Content -->
-        <h3 class="text-lg font-bold text-slate-800 mb-2">Have ideas?</h3>
-        <p class="text-sm text-slate-500 mb-5 leading-relaxed">
-            We are constantly improving Epsilon Azure. Visit our contribution portal to suggest new features or report bugs.
-        </p>
-
-        <!-- Action Buttons -->
-        <a href="https://e-psilon.vercel.app/#contributions" target="_blank" class="block w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-lg transition mb-3 text-sm">
-            Go to Contributions
-        </a>
-        
-        <button id="dismiss-feedback-btn" class="text-xs text-slate-400 hover:text-slate-600 font-medium">
-            Maybe later
-        </button>
     </div>
 </div>
+
+<!-- Main App -->
+<div id="dashboardPage" class="page">
+    <div id="mainContent" class="main-content expanded">
+
+        <header class="flex justify-between items-center mb-6">
+            <div><h1 class="text-2xl font-bold text-slate-800">Welcome, <span id="userNameDisplay" style="color:var(--blue)">User</span></h1><p class="text-slate-400 text-sm">Epsilon Azure Business Dashboard</p></div>
+            <div id="userAvatar" class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg border-2 border-white shadow-sm" style="background:#dbeafe;color:var(--blue)"></div>
+        </header>
+
+        <!-- DASHBOARD -->
+        <div id="dashboardSection" class="section active">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+                <div class="glass p-4 rounded-xl data-card"><div class="flex items-center gap-3 mb-2"><div class="stat-icon" style="background:#dbeafe"><i data-lucide="package" class="w-5 h-5" style="color:var(--blue)"></i></div></div><p class="text-xs text-slate-400 font-medium">Products</p><h3 id="statProducts" class="text-2xl font-bold text-slate-800">0</h3></div>
+                <div class="glass p-4 rounded-xl data-card"><div class="flex items-center gap-3 mb-2"><div class="stat-icon" style="background:#fef3c7"><i data-lucide="receipt" class="w-5 h-5 text-amber-600"></i></div></div><p class="text-xs text-slate-400 font-medium">Expenses</p><h3 id="statExpenses" class="text-2xl font-bold text-slate-800">$0</h3></div>
+                <div class="glass p-4 rounded-xl data-card"><div class="flex items-center gap-3 mb-2"><div class="stat-icon" style="background:#d1fae5"><i data-lucide="wrench" class="w-5 h-5 text-emerald-600"></i></div></div><p class="text-xs text-slate-400 font-medium">Services</p><h3 id="statServices" class="text-2xl font-bold text-slate-800">0</h3></div>
+                <div class="glass p-4 rounded-xl data-card"><div class="flex items-center gap-3 mb-2"><div class="stat-icon" style="background:#ede9fe"><i data-lucide="users" class="w-5 h-5 text-violet-600"></i></div></div><p class="text-xs text-slate-400 font-medium">Employees</p><h3 id="statEmployees" class="text-2xl font-bold text-slate-800">0</h3></div>
+                <div class="glass p-4 rounded-xl data-card"><div class="flex items-center gap-3 mb-2"><div class="stat-icon" style="background:#fce7f3"><i data-lucide="monitor" class="w-5 h-5 text-pink-600"></i></div></div><p class="text-xs text-slate-400 font-medium">Assets</p><h3 id="statAssets" class="text-2xl font-bold text-slate-800">0</h3></div>
+                <div class="glass p-4 rounded-xl data-card"><div class="flex items-center gap-3 mb-2"><div class="stat-icon" style="background:#e0f2fe"><i data-lucide="trending-up" class="w-5 h-5 text-cyan-600"></i></div></div><p class="text-xs text-slate-400 font-medium">Revenue</p><h3 id="statRevenue" class="text-2xl font-bold text-slate-800">$0</h3></div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="glass p-5 rounded-xl"><h3 class="text-sm font-bold text-slate-800 mb-3">Expense Breakdown</h3><canvas id="dashExpChart" height="220"></canvas></div>
+                <div class="glass p-5 rounded-xl"><h3 class="text-sm font-bold text-slate-800 mb-3">Product Categories</h3><canvas id="dashProdChart" height="220"></canvas></div>
+            </div>
+        </div>
+
+        <!-- PRODUCTS -->
+        <div id="productsSection" class="section">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-slate-800">Products</h2>
+                <button onclick="showAddModal('products')" class="flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg shadow-sm" style="background:var(--blue)"><i data-lucide="plus" class="w-4 h-4"></i>Add Product</button>
+            </div>
+            <div id="productsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- EXPENSES -->
+        <div id="expensesSection" class="section">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-slate-800">Expenses</h2>
+                <button onclick="showAddModal('expenses')" class="flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg shadow-sm" style="background:var(--blue)"><i data-lucide="plus" class="w-4 h-4"></i>Add Expense</button>
+            </div>
+            <div id="expensesGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- SERVICES -->
+        <div id="servicesSection" class="section">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-slate-800">Services</h2>
+                <button onclick="showAddModal('services')" class="flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg shadow-sm" style="background:var(--blue)"><i data-lucide="plus" class="w-4 h-4"></i>Add Service</button>
+            </div>
+            <div id="servicesGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- EMPLOYEES -->
+        <div id="employeesSection" class="section">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-slate-800">Employees</h2>
+                <button onclick="showAddModal('employees')" class="flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg shadow-sm" style="background:var(--blue)"><i data-lucide="plus" class="w-4 h-4"></i>Add Employee</button>
+            </div>
+            <div id="employeesGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- ASSETS -->
+        <div id="assetsSection" class="section">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-slate-800">Assets</h2>
+                <button onclick="showAddModal('assets')" class="flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg shadow-sm" style="background:var(--blue)"><i data-lucide="plus" class="w-4 h-4"></i>Add Asset</button>
+            </div>
+            <div id="assetsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- CHARTS -->
+        <div id="chartsSection" class="section">
+            <h2 class="text-xl font-bold text-slate-800 mb-4">Analytics Overview</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="glass p-5 rounded-xl"><h3 class="text-sm font-bold text-slate-700 mb-3">Product Stock Distribution</h3><canvas id="chartProdStock" height="260"></canvas></div>
+                <div class="glass p-5 rounded-xl"><h3 class="text-sm font-bold text-slate-700 mb-3">Monthly Expenses</h3><canvas id="chartMonthlyExp" height="260"></canvas></div>
+                <div class="glass p-5 rounded-xl"><h3 class="text-sm font-bold text-slate-700 mb-3">Service Revenue by Client</h3><canvas id="chartSvcRevenue" height="260"></canvas></div>
+                <div class="glass p-5 rounded-xl"><h3 class="text-sm font-bold text-slate-700 mb-3">Employee Department Distribution</h3><canvas id="chartEmpDept" height="260"></canvas></div>
+                <div class="glass p-5 rounded-xl"><h3 class="text-sm font-bold text-slate-700 mb-3">Asset Value by Type</h3><canvas id="chartAssetVal" height="260"></canvas></div>
+                <div class="glass p-5 rounded-xl"><h3 class="text-sm font-bold text-slate-700 mb-3">Expense vs Revenue</h3><canvas id="chartExpRev" height="260"></canvas></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal for Add/Edit -->
+<div id="modalOverlay" class="modal-overlay" style="display:none">
+    <div class="modal-box">
+        <div class="flex items-center justify-between mb-4">
+            <h3 id="modalTitle" class="text-lg font-bold text-slate-800">Add Item</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <form id="modalForm" class="space-y-3"></form>
+    </div>
+</div>
+
 <script>
-  // --- FEEDBACK PROMPT LOGIC ---
+ /* ═══════════════════════════════════════════
+   EPSILON AZURE — Complete JS Engine
+   ═══════════════════════════════════════════ */
 
-function checkFeedbackPrompt() {
-    // Check if user has already dismissed the feedback prompt
-    const hasSeenPrompt = localStorage.getItem('epsilon-feedback-prompt-seen');
+// ── Supabase Init ──
+const { createClient } = supabase;
+const supabaseClient = createClient(
+    'https://gfsqzkyviivhvyqadpeg.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmc3F6a3l2aWl2aHZ5cWFkcGVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0NDI0NDQsImV4cCI6MjA4NjAxODQ0NH0.MwC6dMZKFZMyklCJKqr4DPek8dxR-EswBZSd1L_AkMA',
+    { auth: { persistSession: true, storageKey: 'epsilon-azure-auth' } }
+);
 
-    if (!hasSeenPrompt) {
-        // Wait 1.5 seconds after dashboard load so it doesn't clash with the Welcome screen
-        setTimeout(() => {
-            const modal = document.getElementById('feedback-modal');
-            if (modal) {
-                modal.classList.remove('hidden');
-                lucide.createIcons(); // Refresh icons inside the modal
+// ── Global State ──
+let currentUser = null;
+let currentEditType = null;
+let currentEditId = null;
+let chartInstances = {};
+const dataCache = {
+    products: [],
+    expenses: [],
+    services: [],
+    employees: [],
+    assets: []
+};
+
+// ── Schemas ──
+const schemas = {
+    products: {
+        table: 'products', label: 'Product', icon: 'package',
+        fields: [
+            { key: 'name', label: 'Product Name', type: 'text', required: true },
+            { key: 'type', label: 'Type', type: 'select', options: ['Electronics','Food & Beverage','Clothing','Furniture','Software','Hardware','Other'], required: true },
+            { key: 'category', label: 'Category', type: 'text', placeholder: 'e.g. Laptop, Beverage' },
+            { key: 'sku', label: 'SKU', type: 'text', placeholder: 'Stock Keeping Unit' },
+            { key: 'description', label: 'Description', type: 'textarea' },
+            { key: 'buying_price', label: 'Buying Price ($)', type: 'number', step: '0.01' },
+            { key: 'selling_price', label: 'Selling Price ($)', type: 'number', step: '0.01' },
+            { key: 'stock_quantity', label: 'Stock Quantity', type: 'number', step: '1' },
+            { key: 'min_stock', label: 'Min Stock Alert', type: 'number', step: '1', placeholder: 'Reorder level' },
+            { key: 'expiry_date', label: 'Expiry Date', type: 'date' },
+            { key: 'supplier', label: 'Supplier', type: 'text' },
+            { key: 'status', label: 'Status', type: 'select', options: ['Active','Discontinued','Out of Stock'], required: true }
+        ],
+        cardTitle: r => r.name || 'Unnamed',
+        cardBadge: r => r.status || 'Active',
+        cardFields: r => [
+            ['Type', r.type], ['Category', r.category],
+            ['SKU', r.sku],
+            ['Buying Price', r.buying_price != null ? '$' + Number(r.buying_price).toFixed(2) : null],
+            ['Selling Price', r.selling_price != null ? '$' + Number(r.selling_price).toFixed(2) : null],
+            ['Stock', r.stock_quantity != null ? String(r.stock_quantity) : null],
+            ['Min Stock', r.min_stock != null ? String(r.min_stock) : null],
+            ['Expiry', r.expiry_date], ['Supplier', r.supplier]
+        ]
+    },
+    expenses: {
+        table: 'expenses', label: 'Expense', icon: 'receipt',
+        fields: [
+            { key: 'title', label: 'Title', type: 'text', required: true },
+            { key: 'category', label: 'Category', type: 'select', options: ['Rent','Utilities','Salaries','Marketing','Office Supplies','Travel','Insurance','Maintenance','Software','Other'], required: true },
+            { key: 'amount', label: 'Amount ($)', type: 'number', step: '0.01', required: true },
+            { key: 'date', label: 'Date', type: 'date', required: true },
+            { key: 'payment_method', label: 'Payment Method', type: 'select', options: ['Cash','Credit Card','Bank Transfer','Check','Digital Wallet'] },
+            { key: 'vendor', label: 'Vendor/Payee', type: 'text' },
+            { key: 'description', label: 'Description', type: 'textarea' },
+            { key: 'recurring', label: 'Recurring', type: 'select', options: ['No','Monthly','Quarterly','Yearly'] },
+            { key: 'status', label: 'Status', type: 'select', options: ['Paid','Pending','Overdue'], required: true }
+        ],
+        cardTitle: r => r.title || 'Untitled',
+        cardBadge: r => r.status || 'Pending',
+        cardFields: r => [
+            ['Category', r.category],
+            ['Amount', r.amount != null ? '$' + Number(r.amount).toFixed(2) : null],
+            ['Date', r.date], ['Payment', r.payment_method],
+            ['Vendor', r.vendor], ['Recurring', r.recurring]
+        ]
+    },
+    services: {
+        table: 'services', label: 'Service', icon: 'wrench',
+        fields: [
+            { key: 'name', label: 'Service Name', type: 'text', required: true },
+            { key: 'type', label: 'Type', type: 'select', options: ['Consulting','Maintenance','Support','Development','Design','Training','Other'], required: true },
+            { key: 'category', label: 'Category', type: 'text' },
+            { key: 'client_name', label: 'Client Name', type: 'text', required: true },
+            { key: 'rate', label: 'Rate ($)', type: 'number', step: '0.01' },
+            { key: 'duration', label: 'Duration', type: 'text', placeholder: 'e.g. 3 months' },
+            { key: 'revenue', label: 'Revenue ($)', type: 'number', step: '0.01' },
+            { key: 'start_date', label: 'Start Date', type: 'date' },
+            { key: 'end_date', label: 'End Date', type: 'date' },
+            { key: 'description', label: 'Description', type: 'textarea' },
+            { key: 'status', label: 'Status', type: 'select', options: ['Active','Completed','Cancelled','On Hold'], required: true }
+        ],
+        cardTitle: r => r.name || 'Unnamed',
+        cardBadge: r => r.status || 'Active',
+        cardFields: r => [
+            ['Type', r.type], ['Category', r.category], ['Client', r.client_name],
+            ['Rate', r.rate != null ? '$' + Number(r.rate).toFixed(2) : null],
+            ['Duration', r.duration],
+            ['Revenue', r.revenue != null ? '$' + Number(r.revenue).toFixed(2) : null],
+            ['Start', r.start_date], ['End', r.end_date]
+        ]
+    },
+    employees: {
+        table: 'employees', label: 'Employee', icon: 'users',
+        fields: [
+            { key: 'name', label: 'Full Name', type: 'text', required: true },
+            { key: 'email', label: 'Email', type: 'email', required: true },
+            { key: 'phone', label: 'Phone', type: 'text' },
+            { key: 'department', label: 'Department', type: 'select', options: ['Engineering','Marketing','Sales','HR','Finance','Operations','Design','Support','Legal','Other'], required: true },
+            { key: 'position', label: 'Position', type: 'text', required: true },
+            { key: 'salary', label: 'Salary ($)', type: 'number', step: '0.01' },
+            { key: 'hire_date', label: 'Hire Date', type: 'date' },
+            { key: 'address', label: 'Address', type: 'text' },
+            { key: 'status', label: 'Status', type: 'select', options: ['Active','On Leave','Terminated','Probation'], required: true }
+        ],
+        cardTitle: r => r.name || 'Unnamed',
+        cardBadge: r => r.status || 'Active',
+        cardFields: r => [
+            ['Email', r.email], ['Phone', r.phone], ['Department', r.department],
+            ['Position', r.position],
+            ['Salary', r.salary != null ? '$' + Number(r.salary).toFixed(2) : null],
+            ['Hire Date', r.hire_date], ['Address', r.address]
+        ]
+    },
+    assets: {
+        table: 'assets', label: 'Asset', icon: 'monitor',
+        fields: [
+            { key: 'name', label: 'Asset Name', type: 'text', required: true },
+            { key: 'type', label: 'Type', type: 'select', options: ['Hardware','Software','Vehicle','Furniture','Equipment','Real Estate','Other'], required: true },
+            { key: 'category', label: 'Category', type: 'text' },
+            { key: 'serial_number', label: 'Serial Number', type: 'text' },
+            { key: 'purchase_date', label: 'Purchase Date', type: 'date' },
+            { key: 'purchase_price', label: 'Purchase Price ($)', type: 'number', step: '0.01' },
+            { key: 'current_value', label: 'Current Value ($)', type: 'number', step: '0.01' },
+            { key: 'location', label: 'Location', type: 'text' },
+            { key: 'assigned_to', label: 'Assigned To', type: 'text' },
+            { key: 'condition', label: 'Condition', type: 'select', options: ['New','Good','Fair','Poor'] },
+            { key: 'warranty_expiry', label: 'Warranty Expiry', type: 'date' },
+            { key: 'status', label: 'Status', type: 'select', options: ['In Use','In Storage','Disposed','Under Maintenance'], required: true }
+        ],
+        cardTitle: r => r.name || 'Unnamed',
+        cardBadge: r => r.status || 'In Use',
+        cardFields: r => [
+            ['Type', r.type], ['Category', r.category], ['Serial #', r.serial_number],
+            ['Purchase Date', r.purchase_date],
+            ['Purchase Price', r.purchase_price != null ? '$' + Number(r.purchase_price).toFixed(2) : null],
+            ['Current Value', r.current_value != null ? '$' + Number(r.current_value).toFixed(2) : null],
+            ['Location', r.location], ['Assigned To', r.assigned_to],
+            ['Condition', r.condition], ['Warranty Exp.', r.warranty_expiry]
+        ]
+    }
+};
+
+// ── Toast ──
+function showToast(msg, type) {
+    type = type || 'success';
+    var t = document.getElementById('toastEl');
+    t.textContent = msg;
+    t.className = 'toast toast-' + type + ' show';
+    setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+// ── Badge class helper ──
+function badgeClass(status) {
+    if (!status) return 'badge-active';
+    var s = status.toLowerCase();
+    if (['active','completed','paid','in use','new','good'].indexOf(s) !== -1) return 'badge-completed';
+    if (['pending','on hold','probation','on leave'].indexOf(s) !== -1) return 'badge-pending';
+    if (['overdue','terminated','disposed','cancelled'].indexOf(s) !== -1) return 'badge-inactive';
+    if (['discontinued','out of stock','in storage'].indexOf(s) !== -1) return 'badge-discontinued';
+    return 'badge-active';
+}
+
+// ── Safe text (prevent XSS in card rendering) ──
+function esc(str) {
+    if (str == null) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Render Cards ──
+function renderCards(type, rows) {
+    var s = schemas[type];
+    var grid = document.getElementById(type + 'Grid');
+    if (!grid) { console.error('Grid not found:', type + 'Grid'); return; }
+
+    if (!rows || !rows.length) {
+        grid.innerHTML = '<div class="col-span-full text-center py-16 text-slate-400">' +
+            '<i data-lucide="' + s.icon + '" class="w-12 h-12 mx-auto mb-3 opacity-30"></i>' +
+            '<p class="text-sm">No ' + s.label.toLowerCase() + 's yet. Click the add button above.</p></div>';
+        lucide.createIcons();
+        return;
+    }
+
+    var html = '';
+    for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        var title = esc(s.cardTitle(r));
+        var badge = esc(s.cardBadge(r));
+        var bc = badgeClass(s.cardBadge(r));
+        var fields = s.cardFields(r);
+
+        var fieldsHtml = '';
+        for (var j = 0; j < fields.length; j++) {
+            var lbl = fields[j][0];
+            var val = fields[j][1];
+            if (val != null && val !== '' && val !== '—') {
+                fieldsHtml += '<div class="flex justify-between gap-2">' +
+                    '<span class="field-label">' + esc(lbl) + '</span>' +
+                    '<span class="field-value text-right">' + esc(val) + '</span></div>';
             }
-        }, 1500);
+        }
+
+        var desc = r.description ? '<p class="text-xs text-slate-400 mt-2 line-clamp-2">' + esc(r.description) + '</p>' : '';
+
+        html += '<div class="glass p-4 rounded-xl data-card">' +
+            '<div class="flex items-start justify-between mb-3">' +
+                '<h4 class="font-bold text-slate-800 text-sm leading-tight">' + title + '</h4>' +
+                '<span class="badge ' + bc + ' ml-2 flex-shrink-0">' + badge + '</span>' +
+            '</div>' +
+            '<div class="space-y-1.5 mb-2">' + fieldsHtml + '</div>' +
+            desc +
+            '<div class="flex gap-2 mt-3 pt-3 border-t border-slate-100">' +
+                '<button data-action="edit" data-type="' + type + '" data-id="' + r.id + '" class="edit-btn flex-1 text-xs py-1.5 rounded-md font-medium hover:bg-blue-50" style="color:var(--blue)">Edit</button>' +
+                '<button data-action="delete" data-type="' + type + '" data-id="' + r.id + '" class="del-btn flex-1 text-xs py-1.5 rounded-md font-medium text-red-500 hover:bg-red-50">Delete</button>' +
+            '</div></div>';
+    }
+
+    grid.innerHTML = html;
+    lucide.createIcons();
+
+    // Bind edit/delete via event delegation
+    grid.onclick = function(e) {
+        var btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        var action = btn.getAttribute('data-action');
+        var typ = btn.getAttribute('data-type');
+        var id = btn.getAttribute('data-id');
+        if (action === 'edit') showEditModal(typ, id);
+        else if (action === 'delete') deleteItem(typ, id);
+    };
+}
+
+// ── Load one type ──
+async function loadData(type) {
+    var s = schemas[type];
+    if (!s) return;
+    var result = await supabaseClient.from(s.table).select('*').order('created_at', { ascending: false });
+    if (result.error) {
+        console.error('Load error for', type, result.error);
+        showToast('Load error: ' + result.error.message, 'error');
+        return;
+    }
+    dataCache[type] = result.data || [];
+    renderCards(type, dataCache[type]);
+}
+
+// ── Load ALL types ──
+async function loadAllData() {
+    var types = Object.keys(schemas);
+    var promises = types.map(function(t) {
+        return supabaseClient.from(schemas[t].table).select('*').order('created_at', { ascending: false });
+    });
+    var results = await Promise.allSettled(promises);
+    for (var i = 0; i < types.length; i++) {
+        if (results[i].status === 'fulfilled') {
+            dataCache[types[i]] = results[i].value.data || [];
+        } else {
+            console.error('Failed to load', types[i], results[i].reason);
+            dataCache[types[i]] = [];
+        }
     }
 }
 
-// Event Listeners for Feedback Modal
-document.addEventListener('DOMContentLoaded', () => {
-    const closeBtn = document.getElementById('close-feedback');
-    const dismissBtn = document.getElementById('dismiss-feedback-btn');
-    const modal = document.getElementById('feedback-modal');
+// ── Dashboard ──
+function refreshDashboard() {
+    var d = dataCache;
+    var el = function(id) { return document.getElementById(id); };
 
-    const hideModal = () => {
-        // Mark as seen
-        localStorage.setItem('epsilon-feedback-prompt-seen', 'true');
-        
-        // Animate out
-        if (modal) {
-            modal.style.opacity = '0';
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                modal.style.opacity = ''; // Reset
-            }, 300);
+    if (!el('statProducts')) return;
+
+    el('statProducts').textContent = d.products.length;
+    var totalExp = 0;
+    for (var i = 0; i < d.expenses.length; i++) totalExp += Number(d.expenses[i].amount) || 0;
+    el('statExpenses').textContent = '$' + totalExp.toFixed(0);
+    el('statServices').textContent = d.services.length;
+    el('statEmployees').textContent = d.employees.length;
+    el('statAssets').textContent = d.assets.length;
+    var totalRev = 0;
+    for (var i = 0; i < d.services.length; i++) totalRev += Number(d.services[i].revenue) || 0;
+    el('statRevenue').textContent = '$' + totalRev.toFixed(0);
+
+    renderDashCharts(d);
+}
+
+function renderDashCharts(d) {
+    if (chartInstances.dashExp) { chartInstances.dashExp.destroy(); chartInstances.dashExp = null; }
+    if (chartInstances.dashProd) { chartInstances.dashProd.destroy(); chartInstances.dashProd = null; }
+
+    var expCats = {};
+    d.expenses.forEach(function(r) { var c = r.category || 'Other'; expCats[c] = (expCats[c] || 0) + (Number(r.amount) || 0); });
+    var expLabels = Object.keys(expCats);
+    var expValues = Object.keys(expCats).map(function(k) { return expCats[k]; });
+
+    var ctx1 = document.getElementById('dashExpChart');
+    if (ctx1) {
+        chartInstances.dashExp = new Chart(ctx1, {
+            type: 'doughnut',
+            data: { labels: expLabels, datasets: [{ data: expValues, backgroundColor: ['#2563eb','#3b82f6','#60a5fa','#93c5fd','#bfdbfe','#dbeafe','#1d4ed8','#1e40af'] }] },
+            options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+        });
+    }
+
+    var prodCats = {};
+    d.products.forEach(function(r) { var c = r.type || 'Other'; prodCats[c] = (prodCats[c] || 0) + 1; });
+    var prodLabels = Object.keys(prodCats);
+    var prodValues = Object.keys(prodCats).map(function(k) { return prodCats[k]; });
+
+    var ctx2 = document.getElementById('dashProdChart');
+    if (ctx2) {
+        chartInstances.dashProd = new Chart(ctx2, {
+            type: 'bar',
+            data: { labels: prodLabels, datasets: [{ label: 'Count', data: prodValues, backgroundColor: '#3b82f6', borderRadius: 6 }] },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+    }
+}
+
+// ── Charts Page ──
+function loadCharts() {
+    var d = dataCache;
+
+    // Destroy old
+    ['ps','me','sr','ed','av','er'].forEach(function(k) {
+        if (chartInstances[k]) { chartInstances[k].destroy(); chartInstances[k] = null; }
+    });
+
+    // 1 - Product Stock
+    var prodStock = {};
+    d.products.forEach(function(r) { prodStock[r.name] = (prodStock[r.name] || 0) + Number(r.stock_quantity || 0); });
+    var psL = Object.keys(prodStock).slice(0, 10);
+    var psV = psL.map(function(k) { return prodStock[k]; });
+    chartInstances.ps = new Chart(document.getElementById('chartProdStock'), {
+        type: 'bar', data: { labels: psL, datasets: [{ label: 'Stock', data: psV, backgroundColor: '#3b82f6', borderRadius: 6 }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+
+    // 2 - Monthly Expenses
+    var monthlyExp = {};
+    d.expenses.forEach(function(r) { if (r.date) { var m = r.date.substring(0, 7); monthlyExp[m] = (monthlyExp[m] || 0) + Number(r.amount || 0); } });
+    var meL = Object.keys(monthlyExp).sort();
+    var meV = meL.map(function(k) { return monthlyExp[k]; });
+    chartInstances.me = new Chart(document.getElementById('chartMonthlyExp'), {
+        type: 'line', data: { labels: meL, datasets: [{ label: 'Expenses', data: meV, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,.1)', fill: true, tension: 0.3 }] },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    // 3 - Service Revenue by Client
+    var svcRev = {};
+    d.services.forEach(function(r) { svcRev[r.client_name] = (svcRev[r.client_name] || 0) + Number(r.revenue || 0); });
+    var srL = Object.keys(svcRev).slice(0, 10);
+    var srV = srL.map(function(k) { return svcRev[k]; });
+    chartInstances.sr = new Chart(document.getElementById('chartSvcRevenue'), {
+        type: 'bar', data: { labels: srL, datasets: [{ label: 'Revenue', data: srV, backgroundColor: '#60a5fa', borderRadius: 6 }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+
+    // 4 - Employee Dept
+    var empDept = {};
+    d.employees.forEach(function(r) { empDept[r.department] = (empDept[r.department] || 0) + 1; });
+    chartInstances.ed = new Chart(document.getElementById('chartEmpDept'), {
+        type: 'doughnut', data: { labels: Object.keys(empDept), datasets: [{ data: Object.values(empDept), backgroundColor: ['#2563eb','#3b82f6','#60a5fa','#93c5fd','#bfdbfe','#dbeafe','#1d4ed8','#1e40af','#6366f1','#818cf8'] }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+    });
+
+    // 5 - Asset Value by Type
+    var assetVal = {};
+    d.assets.forEach(function(r) { assetVal[r.type] = (assetVal[r.type] || 0) + Number(r.current_value || 0); });
+    chartInstances.av = new Chart(document.getElementById('chartAssetVal'), {
+        type: 'pie', data: { labels: Object.keys(assetVal), datasets: [{ data: Object.values(assetVal), backgroundColor: ['#2563eb','#60a5fa','#93c5fd','#bfdbfe','#dbeafe','#1d4ed8'] }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+    });
+
+    // 6 - Expense vs Revenue
+    var totalExp = 0; d.expenses.forEach(function(r) { totalExp += Number(r.amount || 0); });
+    var totalRev = 0; d.services.forEach(function(r) { totalRev += Number(r.revenue || 0); });
+    chartInstances.er = new Chart(document.getElementById('chartExpRev'), {
+        type: 'bar', data: { labels: ['Total Expenses', 'Total Revenue'], datasets: [{ data: [totalExp, totalRev], backgroundColor: ['#ef4444', '#2563eb'], borderRadius: 8 }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+}
+
+// ── Modal ──
+function closeModal() {
+    document.getElementById('modalOverlay').style.display = 'none';
+    currentEditType = null;
+    currentEditId = null;
+}
+
+function showAddModal(type) {
+    currentEditType = type;
+    currentEditId = null;
+    var s = schemas[type];
+    document.getElementById('modalTitle').textContent = 'Add ' + s.label;
+    buildModalForm(s.fields, {});
+    document.getElementById('modalOverlay').style.display = 'flex';
+}
+
+function showEditModal(type, id) {
+    currentEditType = type;
+    currentEditId = id;
+    var s = schemas[type];
+    var row = null;
+    var list = dataCache[type] || [];
+    for (var i = 0; i < list.length; i++) {
+        if (list[i].id === id) { row = list[i]; break; }
+    }
+    if (!row) { showToast('Item not found in cache', 'error'); return; }
+    document.getElementById('modalTitle').textContent = 'Edit ' + s.label;
+    buildModalForm(s.fields, row);
+    document.getElementById('modalOverlay').style.display = 'flex';
+}
+
+function buildModalForm(fields, row) {
+    var form = document.getElementById('modalForm');
+    var html = '';
+    for (var i = 0; i < fields.length; i++) {
+        var f = fields[i];
+        var val = row[f.key] != null ? row[f.key] : '';
+        var reqMark = f.required ? ' *' : '';
+        html += '<div><label class="field-label block mb-1">' + esc(f.label) + reqMark + '</label>';
+
+        if (f.type === 'textarea') {
+            html += '<textarea name="' + f.key + '" class="input-field" rows="2" placeholder="' + esc(f.placeholder || '') + '">' + esc(val) + '</textarea>';
+        } else if (f.type === 'select') {
+            html += '<select name="' + f.key + '" class="input-field"' + (f.required ? ' required' : '') + '>';
+            html += '<option value="">Select...</option>';
+            for (var j = 0; j < f.options.length; j++) {
+                var sel = (String(val) === f.options[j]) ? ' selected' : '';
+                html += '<option value="' + esc(f.options[j]) + '"' + sel + '>' + esc(f.options[j]) + '</option>';
+            }
+            html += '</select>';
+        } else {
+            var stepAttr = f.step ? ' step="' + f.step + '"' : '';
+            var reqAttr = f.required ? ' required' : '';
+            html += '<input type="' + f.type + '" name="' + f.key + '" class="input-field" value="' + esc(val) + '" placeholder="' + esc(f.placeholder || '') + '"' + stepAttr + reqAttr + '>';
         }
-    };
+        html += '</div>';
+    }
+    html += '<button type="submit" class="w-full text-white font-medium py-2.5 rounded-lg transition mt-2" style="background:var(--blue)">' + (currentEditId ? 'Update' : 'Save') + '</button>';
+    form.innerHTML = html;
+}
 
-    if (closeBtn) closeBtn.addEventListener('click', hideModal);
-    if (dismissBtn) dismissBtn.addEventListener('click', hideModal);
-});
+// ── Save (Add / Edit) ──
+async function handleSave(e) {
+    e.preventDefault();
+    if (!currentEditType) return;
+
+    var s = schemas[currentEditType];
+    var form = document.getElementById('modalForm');
+    var obj = {};
+
+    for (var i = 0; i < s.fields.length; i++) {
+        var f = s.fields[i];
+        var el = form.querySelector('[name="' + f.key + '"]');
+        if (!el) continue;
+        var v = el.value;
+        if (f.type === 'number') {
+            obj[f.key] = v !== '' ? parseFloat(v) : null;
+        } else {
+            obj[f.key] = v === '' ? null : v;
+        }
+    }
+
+    var error;
+    if (currentEditId) {
+        var res = await supabaseClient.from(s.table).update(obj).eq('id', currentEditId);
+        error = res.error;
+    } else {
+        obj.user_id = currentUser.id;
+        var res = await supabaseClient.from(s.table).insert(obj);
+        error = res.error;
+    }
+
+    if (error) {
+        showToast('Save failed: ' + error.message, 'error');
+        return;
+    }
+
+    showToast(s.label + (currentEditId ? ' updated!' : ' added!'));
+    closeModal();
+
+    // Full reload
+    await loadAllData();
+    renderActiveSection();
+}
+
+// ── Delete ──
+async function deleteItem(type, id) {
+    var s = schemas[type];
+    if (!confirm('Delete this ' + s.label.toLowerCase() + '?')) return;
+
+    var result = await supabaseClient.from(s.table).delete().eq('id', id);
+    if (result.error) {
+        showToast('Delete failed: ' + result.error.message, 'error');
+        return;
+    }
+
+    showToast(s.label + ' deleted!');
+    await loadAllData();
+    renderActiveSection();
+}
+
+// ── Render whatever section is currently active ──
+function renderActiveSection() {
+    var activeSec = document.querySelector('.section.active');
+    if (!activeSec) return;
+
+    var secId = activeSec.id;
+
+    if (secId === 'dashboardSection') {
+        refreshDashboard();
+    } else if (secId === 'chartsSection') {
+        refreshDashboard();
+        loadCharts();
+    } else {
+        var type = secId.replace('Section', '');
+        if (schemas[type]) {
+            renderCards(type, dataCache[type] || []);
+        }
+    }
+}
+
+// ── Navigation ──
+function initNavigation() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('sidebarOverlay');
+
+    document.getElementById('menuToggle').addEventListener('click', function() {
+        sidebar.classList.remove('closed');
+        sidebar.classList.add('open');
+        overlay.classList.add('active');
+    });
+
+    document.getElementById('closeSidebar').addEventListener('click', closeSidebar);
+    overlay.addEventListener('click', closeSidebar);
+
+    function closeSidebar() {
+        sidebar.classList.add('closed');
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+    }
+
+    // Nav buttons
+    document.querySelectorAll('.nav-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+            document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+
+            var pg = btn.getAttribute('data-page');
+            document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+            var sec = document.getElementById(pg + 'Section');
+            if (sec) sec.classList.add('active');
+
+            closeSidebar();
+
+            if (pg === 'dashboard') {
+                refreshDashboard();
+            } else if (schemas[pg]) {
+                await loadData(pg);
+            } else if (pg === 'charts') {
+                refreshDashboard();
+                loadCharts();
+            }
+        });
+    });
+}
+
+// ── Auth ──
+function initAuth() {
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        var email = document.getElementById('loginEmail').value;
+        var password = document.getElementById('loginPassword').value;
+        var result = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
+        if (result.error) {
+            var el = document.getElementById('loginError');
+            el.textContent = result.error.message;
+            el.classList.remove('hidden');
+        } else {
+            await onAuthSuccess();
+        }
+    });
+
+    document.getElementById('signupForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        var email = document.getElementById('signupEmail').value;
+        var password = document.getElementById('signupPassword').value;
+        var result = await supabaseClient.auth.signUp({ email: email, password: password });
+        if (result.error) {
+            var el = document.getElementById('signupError');
+            el.textContent = result.error.message;
+            el.classList.remove('hidden');
+        } else {
+            showToast('Account created! Check email for verification.');
+            await onAuthSuccess();
+        }
+    });
+
+    document.getElementById('showSignup').addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('loginForm').classList.add('hidden');
+        document.getElementById('signupForm').classList.remove('hidden');
+    });
+
+    document.getElementById('showLogin').addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('signupForm').classList.add('hidden');
+        document.getElementById('loginForm').classList.remove('hidden');
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async function() {
+        await supabaseClient.auth.signOut();
+        location.reload();
+    });
+}
+
+async function onAuthSuccess() {
+    var result = await supabaseClient.auth.getSession();
+    var session = result.data.session;
+    if (!session) return;
+
+    currentUser = session.user;
+    document.getElementById('authPage').classList.remove('active');
+    document.getElementById('dashboardPage').classList.add('active');
+    document.getElementById('menuToggle').classList.remove('hidden');
+
+    var email = currentUser.email || '';
+    document.getElementById('userNameDisplay').textContent = email.split('@')[0];
+    document.getElementById('userAvatar').textContent = (email[0] || 'U').toUpperCase();
+
+    // Load all data then render
+    console.log('[Epsilon Azure] Loading all data for user:', email);
+    await loadAllData();
+    console.log('[Epsilon Azure] Data loaded:', JSON.stringify(Object.keys(dataCache).map(function(k) { return k + ':' + dataCache[k].length; })));
+    refreshDashboard();
+}
+
+// ── Modal event wiring ──
+function initModal() {
+    var overlay = document.getElementById('modalOverlay');
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) closeModal();
+    });
+
+    document.getElementById('modalForm').addEventListener('submit', handleSave);
+}
+
+// ── Realtime subscriptions ──
+function initRealtime() {
+    var types = Object.keys(schemas);
+    types.forEach(function(t) {
+        supabaseClient
+            .channel('rt-' + t)
+            .on('postgres_changes', { event: '*', schema: 'public', table: t }, function() {
+                console.log('[Realtime] Change detected on', t);
+                loadData(t);
+            })
+            .subscribe();
+    });
+}
+
+// ── BOOT ──
+async function boot() {
+    console.log('[Epsilon Azure] Booting...');
+    lucide.createIcons();
+
+    initNavigation();
+    initAuth();
+    initModal();
+    initRealtime();
+
+    // Check existing session
+    var result = await supabaseClient.auth.getSession();
+    if (result.data.session) {
+        console.log('[Epsilon Azure] Existing session found');
+        await onAuthSuccess();
+    } else {
+        console.log('[Epsilon Azure] No session, showing auth page');
+    }
+}
+
+// Run on DOM ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+} else {
+    boot();
+}
 </script>
-        <script>
-        // --- 1. SUPABASE SETUP ---
-        const { createClient } = supabase;
-        const supabaseClient = createClient(
-            'https://gfsqzkyviivhvyqadpeg.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmc3F6a3l2aWl2aHZ5cWFkcGVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0NDI0NDQsImV4cCI6MjA4NjAxODQ0NH0.MwC6dMZKFZMyklCJKqr4DPek8dxR-EswBZSd1L_AkMA',
-            { auth: { persistSession: true, storageKey: 'ep-auth' } }
-        );
+<!--
+╔══════════════════════════════════════════════════════════════╗
+║  SQL SNIPPETS — Run these in Supabase SQL Editor             ║
+╚══════════════════════════════════════════════════════════════╝
 
-        // --- 2. STATE ---
-        let currentUser = null;
-        let currentBusiness = null;
+-- Products Table
+CREATE TABLE IF NOT EXISTS products (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    type TEXT,
+    category TEXT,
+    sku TEXT,
+    description TEXT,
+    buying_price NUMERIC,
+    selling_price NUMERIC,
+    stock_quantity INTEGER,
+    min_stock INTEGER,
+    expiry_date DATE,
+    supplier TEXT,
+    status TEXT DEFAULT 'Active',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own products" ON products FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own products" ON products FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own products" ON products FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own products" ON products FOR DELETE USING (auth.uid() = user_id);
 
-        // --- 3. TABLE CONFIGURATIONS (For Modal Generation) ---
-        const tableConfigs = {
-            earm_customers: [
-                { key: 'name', label: 'Customer Name', type: 'text', required: true },
-                { key: 'email', label: 'Email Address', type: 'email', required: false },
-                { key: 'status', label: 'Status', type: 'select', options: ['Lead', 'Active', 'Inactive'], required: true },
-                { key: 'phone', label: 'Phone Number', type: 'text', required: false }
-            ],
-            earm_employees: [
-                { key: 'name', label: 'Employee Name', type: 'text', required: true },
-                { key: 'role', label: 'Role/Title', type: 'text', required: true },
-                { key: 'email', label: 'Work Email', type: 'email', required: false }
-            ],
-            earm_assets: [
-                { key: 'name', label: 'Asset Name', type: 'text', required: true },
-                { key: 'type', label: 'Asset Type', type: 'text', required: true },
-                { key: 'status', label: 'Status', type: 'select', options: ['Good', 'Maintenance', 'Retired'], required: true }
-            ],
-            earm_products: [
-                { key: 'name', label: 'Product Name', type: 'text', required: true },
-                { key: 'sku', label: 'SKU Code', type: 'text', required: true },
-                { key: 'price', label: 'Price', type: 'number', required: false }
-            ],
-            earm_services: [
-                { key: 'name', label: 'Service Name', type: 'text', required: true },
-                { key: 'duration', label: 'Duration', type: 'text', required: false, placeholder: 'e.g. 1 hour' }
-            ],
-            earm_delivery: [
-                { key: 'tracking', label: 'Tracking ID', type: 'text', required: true },
-                { key: 'destination', label: 'Destination', type: 'text', required: true },
-                { key: 'status', label: 'Status', type: 'select', options: ['Pending', 'In Transit', 'Delivered'], required: true }
-            ]
-        };
+-- Expenses Table
+CREATE TABLE IF NOT EXISTS expenses (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    category TEXT,
+    amount NUMERIC,
+    date DATE,
+    payment_method TEXT,
+    vendor TEXT,
+    description TEXT,
+    recurring TEXT DEFAULT 'No',
+    status TEXT DEFAULT 'Pending',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own expenses" ON expenses FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own expenses" ON expenses FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own expenses" ON expenses FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own expenses" ON expenses FOR DELETE USING (auth.uid() = user_id);
 
-        // --- 4. INITIALIZATION ---
-        window.addEventListener('DOMContentLoaded', async () => {
-            lucide.createIcons();
-            
-            // Check for existing session
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            
-            if (session) {
-                currentUser = session.user;
-                await loadBusinessData();
-                showApp();
-            } else {
-                showAuth();
-            }
+-- Services Table
+CREATE TABLE IF NOT EXISTS services (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    type TEXT,
+    category TEXT,
+    client_name TEXT,
+    rate NUMERIC,
+    duration TEXT,
+    revenue NUMERIC,
+    start_date DATE,
+    end_date DATE,
+    description TEXT,
+    status TEXT DEFAULT 'Active',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE services ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own services" ON services FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own services" ON services FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own services" ON services FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own services" ON services FOR DELETE USING (auth.uid() = user_id);
 
-            // Listen for auth changes (Login/Logout)
-            supabaseClient.auth.onAuthStateChange(async (_event, session) => {
-                if (_event === 'SIGNED_IN' && session) {
-                    currentUser = session.user;
-                    await loadBusinessData();
-                    showApp();
-                } else if (_event === 'SIGNED_OUT') {
-                    currentUser = null;
-                    currentBusiness = null;
-                    showAuth();
-                }
-            });
-        });
+-- Employees Table
+CREATE TABLE IF NOT EXISTS employees (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    email TEXT,
+    phone TEXT,
+    department TEXT,
+    position TEXT,
+    salary NUMERIC,
+    hire_date DATE,
+    address TEXT,
+    status TEXT DEFAULT 'Active',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE employees ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own employees" ON employees FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own employees" ON employees FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own employees" ON employees FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own employees" ON employees FOR DELETE USING (auth.uid() = user_id);
 
-        // --- 5. AUTH & BUSINESS LOGIC ---
-
-        function toggleAuthMode() {
-            const loginForm = document.getElementById('login-form').parentElement;
-            const signupContainer = document.getElementById('signup-form-container');
-            
-            loginForm.classList.toggle('hidden');
-            signupContainer.classList.toggle('hidden');
-        }
-
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = e.target.querySelector('button');
-            const originalText = btn.innerText;
-            btn.innerText = "Signing In...";
-            btn.disabled = true;
-
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            
-            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            
-            if (error) {
-                showToast(error.message, 'error');
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
-            // Success is handled by onAuthStateChange
-        });
-
-        document.getElementById('signup-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = e.target.querySelector('button');
-            const originalText = btn.innerText;
-            btn.innerText = "Creating Account...";
-            btn.disabled = true;
-
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
-            const bizName = document.getElementById('signup-biz-name').value;
-
-            // 1. Create Auth User
-            const { data, error } = await supabaseClient.auth.signUp({ 
-                email, password,
-                options: { 
-                    data: { business_name: bizName } // Store in metadata for recovery
-                }
-            });
-
-            if (error) {
-                showToast(error.message, 'error');
-                btn.innerText = originalText;
-                btn.disabled = false;
-                return;
-            }
-
-            if (data.user) {
-                showToast('Account created! Setting up business...', 'success');
-                // 2. Create Business Profile immediately
-                const dbError = await createBusinessProfile(data.user.id, bizName);
-                
-                if (dbError) {
-                    console.error("Business creation failed:", dbError);
-                    showToast('Account created, but business setup failed. Please contact support.', 'error');
-                } else {
-                    showToast('Setup complete! Redirecting...', 'success');
-                }
-            }
-        });
-
-        // Robust Business Profile Creation
-        async function createBusinessProfile(userId, bizName) {
-            const { error } = await supabaseClient.from('earm_businesses').insert([{
-                user_id: userId, // Explicitly link user_id
-                name: bizName,
-                type: 'General',
-                location: 'TBD'
-            }]);
-            return error;
-        }
-
-        // Robust Data Loading with Fallback
-        async function loadBusinessData() {
-            if (!currentUser) return;
-
-            // Try to fetch business
-            let { data, error } = await supabaseClient
-                .from('earm_businesses')
-                .select('*')
-                .eq('user_id', currentUser.id)
-                .maybeSingle(); // maybeSingle doesn't throw error if not found
-
-            if (error) {
-                console.error("Error fetching business:", error);
-                showToast("Error loading business data.", "error");
-                return;
-            }
-
-            if (data) {
-                currentBusiness = data;
-                updateHeader();
-            } else {
-                // FALLBACK: If business missing, try to recreate it from metadata
-                console.warn("No business found for user. Attempting recovery...");
-                const metaBizName = currentUser.user_metadata?.business_name || "My Business";
-                
-                const recoveryError = await createBusinessProfile(currentUser.id, metaBizName);
-                
-                if (!recoveryError) {
-                    // Retry fetching
-                    const { data: retryData } = await supabaseClient
-                        .from('earm_businesses')
-                        .select('*')
-                        .eq('user_id', currentUser.id)
-                        .single();
-                    
-                    if (retryData) {
-                        currentBusiness = retryData;
-                        updateHeader();
-                        showToast("Business profile recovered!", "success");
-                    }
-                } else {
-                    showToast("Critical: Business profile missing and could not be created.", "error");
-                }
-            }
-        }
-
-        function updateHeader() {
-            if (currentBusiness) {
-                document.getElementById('header-biz-name').textContent = currentBusiness.name;
-                document.getElementById('header-user-email').textContent = currentUser.email;
-            }
-        }
-
-        async function handleLogout() {
-            await supabaseClient.auth.signOut();
-            showAuth();
-        }
-
-        // --- 6. ROUTING & VIEWS ---
-        function showAuth() {
-            document.getElementById('auth-screen').classList.remove('hidden');
-            document.getElementById('app-layout').classList.add('hidden');
-        }
-
-        function showApp() {
-            if (!currentBusiness) {
-                showToast("Waiting for business setup...", "info");
-                return;
-            }
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('app-layout').classList.remove('hidden');
-            router('dashboard');
-        }
-
-        function router(view) {
-            // Update Sidebar UI
-            document.querySelectorAll('.nav-item').forEach(el => {
-                el.classList.remove('bg-blue-50', 'text-blue-700');
-                el.classList.add('text-slate-600');
-            });
-            const activeBtn = document.getElementById(`nav-${view}`);
-            if(activeBtn) {
-                activeBtn.classList.add('bg-blue-50', 'text-blue-700');
-                activeBtn.classList.remove('text-slate-600');
-            }
-
-            const content = document.getElementById('content-area');
-            const title = document.getElementById('page-title');
-            const sub = document.getElementById('page-subtitle');
-            
-            content.innerHTML = '';
-            content.className = "p-8 max-w-7xl mx-auto fade-in";
-
-            switch(view) {
-                case 'dashboard':
-                    title.innerText = 'Dashboard';
-                    sub.innerText = 'Real-time business overview';
-                    renderDashboard(content);
-                    break;
-                case 'customers':
-                    title.innerText = 'Customers';
-                    renderTablePage(content, 'earm_customers', ['Name', 'Email', 'Status', 'Phone']);
-                    break;
-                case 'employees':
-                    title.innerText = 'Employees';
-                    renderTablePage(content, 'earm_employees', ['Name', 'Role', 'Email']);
-                    break;
-                case 'assets':
-                    title.innerText = 'Assets';
-                    renderTablePage(content, 'earm_assets', ['Name', 'Type', 'Status']);
-                    break;
-                case 'products':
-                    title.innerText = 'Products';
-                    renderTablePage(content, 'earm_products', ['Name', 'SKU', 'Price']);
-                    break;
-                case 'services':
-                    title.innerText = 'Services';
-                    renderTablePage(content, 'earm_services', ['Name', 'Duration']);
-                    break;
-                case 'delivery':
-                    title.innerText = 'Delivery';
-                    renderTablePage(content, 'earm_delivery', ['Tracking ID', 'Destination', 'Status']);
-                    break;
-                case 'settings':
-                    title.innerText = 'Settings';
-                    renderSettings(content);
-                    break;
-            }
-            lucide.createIcons();
-        }
-
-        // --- 7. RENDERERS ---
-
-        // Dashboard with Real Counts
-        async function renderDashboard(container) {
-            // Helper to get counts
-            const getCount = async (table) => {
-                const { count, error } = await supabaseClient
-                    .from(table)
-                    .select('*', { count: 'exact', head: true })
-                    .eq('business_id', currentBusiness.id); // Filter by business ID!
-                return error ? 0 : count;
-            };
-
-            // Parallel requests for speed
-            const [custCount, empCount, assetCount, prodCount] = await Promise.all([
-                getCount('earm_customers'),
-                getCount('earm_employees'),
-                getCount('earm_assets'),
-                getCount('earm_products')
-            ]);
-
-            const stats = [
-                { label: 'Customers', val: custCount, icon: 'users', color: 'text-blue-600', bg: 'bg-blue-50' },
-                { label: 'Employees', val: empCount, icon: 'user-cog', color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                { label: 'Assets', val: assetCount, icon: 'package', color: 'text-orange-600', bg: 'bg-orange-50' },
-                { label: 'Products', val: prodCount, icon: 'shopping-bag', color: 'text-emerald-600', bg: 'bg-emerald-50' }
-            ];
-
-            const grid = document.createElement('div');
-            grid.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8";
-            
-            stats.forEach(stat => {
-                grid.innerHTML += `
-                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-                        <div class="p-3 rounded-lg ${stat.bg} ${stat.color}">
-                            <i data-lucide="${stat.icon}"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-slate-500 font-medium">${stat.label}</p>
-                            <h3 class="text-2xl font-bold text-slate-800">${stat.val}</h3>
-                        </div>
-                    </div>
-                `;
-            });
-            container.appendChild(grid);
-
-            // Empty dashboard filler if no data
-            if (custCount === 0 && empCount === 0) {
-                container.innerHTML += `
-                    <div class="bg-white p-8 rounded-xl border border-dashed border-slate-300 text-center">
-                        <i data-lucide="layout-dashboard" class="w-12 h-12 text-slate-300 mx-auto mb-3"></i>
-                        <h3 class="text-lg font-bold text-slate-700">Welcome to Epsilon Azure</h3>
-                        <p class="text-slate-500 mb-4">Your business database is empty. Start by adding customers or employees.</p>
-                        <button onclick="router('customers')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Get Started</button>
-                    </div>
-                `;
-            } else {
-                 container.innerHTML += `
-                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                        <h3 class="text-lg font-bold text-slate-800 mb-4">System Status</h3>
-                        <div class="flex items-center gap-2 text-green-600 font-medium text-sm bg-green-50 w-fit px-3 py-1 rounded-full">
-                            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                            Connected to Supabase
-                        </div>
-                    </div>
-                 `;
-            }
-        }
-
-        // Generic Table Page Renderer
-        async function renderTablePage(container, tableName, headers) {
-            // Toolbar
-            const toolbar = document.createElement('div');
-            toolbar.className = "flex justify-between items-center mb-6";
-            toolbar.innerHTML = `
-                <div class="relative w-64">
-                    <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-slate-400"></i>
-                    <input type="text" id="table-search" placeholder="Search..." class="pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 w-full">
-                </div>
-                <button onclick="openAddModal('${tableName}')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition shadow-lg shadow-blue-200">
-                    <i data-lucide="plus" class="w-4 h-4"></i> Add New
-                </button>
-            `;
-            container.appendChild(toolbar);
-
-            // Loading State
-            const loader = document.createElement('div');
-            loader.className = "flex justify-center py-10";
-            loader.innerHTML = `<div class="loader"></div>`;
-            container.appendChild(loader);
-
-            // Fetch Real Data (SECURITY: Filter by business_id)
-            const { data, error } = await supabaseClient
-                .from(tableName)
-                .select('*')
-                .eq('business_id', currentBusiness.id); // CRITICAL FIX
-            
-            // Remove loader
-            container.removeChild(loader);
-
-            if (error) {
-                console.error("Table Load Error:", error);
-                container.innerHTML += `<div class="text-red-500 text-sm">Error loading data: ${error.message}</div>`;
-                return;
-            }
-
-            if (!data || data.length === 0) {
-                // Empty State
-                container.innerHTML += `
-                    <div class="bg-white border border-slate-200 rounded-xl p-12 text-center shadow-sm">
-                        <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i data-lucide="inbox" class="w-8 h-8 text-slate-400"></i>
-                        </div>
-                        <h3 class="text-lg font-bold text-slate-800">No items found</h3>
-                        <p class="text-slate-500 mb-6">Your ${tableName.replace('earm_', '')} list is currently empty.</p>
-                        <button onclick="openAddModal('${tableName}')" class="text-blue-600 font-medium hover:underline">Add your first item</button>
-                    </div>
-                `;
-                return;
-            }
-
-            // Render Table
-            const tableWrap = document.createElement('div');
-            tableWrap.className = "bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden";
-            
-            const keys = Object.keys(data[0]).filter(k => k !== 'id' && k !== 'business_id' && k !== 'created_at');
-            
-            let html = `
-                <table class="w-full text-sm text-left">
-                    <thead class="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
-                        <tr>
-                            ${keys.map(k => `<th class="px-6 py-4 capitalize">${k.replace('_', ' ')}</th>`).join('')}
-                            <th class="px-6 py-4 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            data.forEach(row => {
-                html += `
-                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
-                        ${keys.map(k => `<td class="px-6 py-4 text-slate-700">${row[k] || '-'}</td>`).join('')}
-                        <td class="px-6 py-4 text-right">
-                             <button onclick="deleteItem('${tableName}', '${row.id}')" class="text-red-500 hover:text-red-700 text-xs font-medium">Delete</button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            html += `</tbody></table>`;
-            tableWrap.innerHTML = html;
-            container.appendChild(tableWrap);
-            
-            // Search functionality (Client side for demo)
-            const searchInput = document.getElementById('table-search');
-            if(searchInput) {
-                searchInput.addEventListener('input', (e) => {
-                    const term = e.target.value.toLowerCase();
-                    const rows = tableWrap.querySelectorAll('tbody tr');
-                    rows.forEach(row => {
-                        const text = row.innerText.toLowerCase();
-                        row.style.display = text.includes(term) ? '' : 'none';
-                    });
-                });
-            }
-        }
-
-        // Settings Page
-        function renderSettings(container) {
-            const b = currentBusiness || {};
-            const form = document.createElement('div');
-            form.className = "bg-white rounded-xl border border-slate-200 shadow-sm p-8 max-w-2xl";
-            form.innerHTML = `
-                <div class="mb-6 pb-6 border-b border-slate-100">
-                    <h3 class="text-lg font-bold text-slate-800">Business Profile</h3>
-                </div>
-                <form id="settings-form" class="space-y-5">
-                    <div class="grid grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Business Name</label>
-                            <input type="text" id="set-name" value="${b.name || ''}" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:border-blue-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Type</label>
-                            <select id="set-type" class="w-full px-4 py-2 border border-slate-200 rounded-lg bg-white">
-                                <option ${b.type === 'Technology' ? 'selected' : ''}>Technology</option>
-                                <option ${b.type === 'Retail' ? 'selected' : ''}>Retail</option>
-                                <option ${b.type === 'Service' ? 'selected' : ''}>Service</option>
-                                <option ${b.type === 'General' ? 'selected' : ''}>General</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Location</label>
-                        <input type="text" id="set-loc" value="${b.location || ''}" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:border-blue-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Description</label>
-                        <textarea id="set-desc" rows="3" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:border-blue-500 outline-none">${b.description || ''}</textarea>
-                    </div>
-                    <div class="pt-4">
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-lg shadow-blue-200">Save Changes</button>
-                    </div>
-                </form>
-            `;
-            container.appendChild(form);
-
-            document.getElementById('settings-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const update = {
-                    name: document.getElementById('set-name').value,
-                    type: document.getElementById('set-type').value,
-                    location: document.getElementById('set-loc').value,
-                    description: document.getElementById('set-desc').value
-                };
-                
-                const { error } = await supabaseClient
-                    .from('earm_businesses')
-                    .update(update)
-                    .eq('id', currentBusiness.id); // Update by ID, not user_id
-
-                if (error) showToast(error.message, 'error');
-                else {
-                    currentBusiness = { ...currentBusiness, ...update };
-                    document.getElementById('header-biz-name').textContent = update.name;
-                    showToast('Business settings updated', 'success');
-                }
-            });
-        }
-
-        // --- 8. MODAL & CRUD LOGIC ---
-
-        function openAddModal(tableName) {
-            const config = tableConfigs[tableName];
-            if (!config) return;
-
-            document.getElementById('modal-table-name').value = tableName;
-            document.getElementById('modal-title').innerText = `Add New ${tableName.replace('earm_', '').slice(0, -1)}`;
-            
-            const fieldsContainer = document.getElementById('modal-fields');
-            fieldsContainer.innerHTML = '';
-
-            config.forEach(field => {
-                let inputHtml = '';
-                if (field.type === 'select') {
-                    inputHtml = `
-                        <select id="field-${field.key}" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:border-blue-500 outline-none bg-white">
-                            ${field.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
-                        </select>
-                    `;
-                } else {
-                    inputHtml = `<input type="${field.type}" id="field-${field.key}" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:border-blue-500 outline-none" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''}>`;
-                }
-
-                fieldsContainer.innerHTML += `
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">${field.label}</label>
-                        ${inputHtml}
-                    </div>
-                `;
-            });
-
-            document.getElementById('item-modal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('item-modal').classList.add('hidden');
-        }
-
-        document.getElementById('modal-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const tableName = document.getElementById('modal-table-name').value;
-            const config = tableConfigs[tableName];
-            
-            const payload = {
-                business_id: currentBusiness.id // Ensure correct ID is linked
-            };
-
-            config.forEach(field => {
-                payload[field.key] = document.getElementById(`field-${field.key}`).value;
-            });
-
-            const { error } = await supabaseClient.from(tableName).insert([payload]);
-
-            if (error) {
-                showToast(error.message, 'error');
-                console.error("Insert Error:", error);
-            } else {
-                showToast('Item added successfully', 'success');
-                closeModal();
-                const currentView = document.querySelector('.nav-item.bg-blue-50')?.id?.replace('nav-', '');
-                if(currentView) router(currentView);
-            }
-        });
-
-        async function deleteItem(tableName, id) {
-            if(!confirm('Are you sure you want to delete this item?')) return;
-            
-            // SECURITY: Ensure we only delete from current business
-            const { error } = await supabaseClient
-                .from(tableName)
-                .delete()
-                .eq('id', id)
-                .eq('business_id', currentBusiness.id);
-            
-            if (error) showToast(error.message, 'error');
-            else {
-                showToast('Item deleted', 'success');
-                const currentView = document.querySelector('.nav-item.bg-blue-50')?.id?.replace('nav-', '');
-                if(currentView) router(currentView);
-            }
-        }
-
-        // --- 9. UTILS ---
-        function showToast(msg, type = 'info') {
-            const toast = document.createElement('div');
-            const colors = type === 'success' ? 'bg-green-600' : (type === 'error' ? 'bg-red-600' : 'bg-slate-800');
-            toast.className = `${colors} text-white px-4 py-3 rounded-lg shadow-lg text-sm font-medium fade-in flex items-center gap-2`;
-            toast.innerHTML = `<span>${msg}</span>`;
-            
-            const container = document.getElementById('toast-container');
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-        checkFeedbackPrompt();
-    </script>
+-- Assets Table
+CREATE TABLE IF NOT EXISTS assets (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    type TEXT,
+    category TEXT,
+    serial_number TEXT,
+    purchase_date DATE,
+    purchase_price NUMERIC,
+    current_value NUMERIC,
+    location TEXT,
+    assigned_to TEXT,
+    condition TEXT,
+    warranty_expiry DATE,
+    status TEXT DEFAULT 'In Use',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE assets ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own assets" ON assets FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own assets" ON assets FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own assets" ON assets FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own assets" ON assets FOR DELETE USING (auth.uid() = user_id);
+-->
 </body>
 </html>
