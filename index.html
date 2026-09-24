@@ -16,6 +16,12 @@
         .bg-mesh{position:fixed;inset:0;z-index:-1;background-image:radial-gradient(at 0% 0%,rgba(37,99,235,.12) 0,transparent 50%),radial-gradient(at 100% 100%,rgba(59,130,246,.1) 0,transparent 50%),radial-gradient(at 50% 0%,rgba(96,165,250,.08) 0,transparent 50%);}
         .glass{background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border:1px solid rgba(37,99,235,.12);box-shadow:0 4px 6px -1px rgba(0,0,0,.04),0 2px 4px -1px rgba(0,0,0,.02);}
         .sidebar{position:fixed;left:0;top:0;height:100vh;width:260px;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);border-right:1px solid rgba(37,99,235,.15);transition:transform .3s ease;z-index:100;overflow-y:auto;}
+        /* Calculator Styles */
+.calc-card { transition: all .2s; cursor: pointer; }
+.calc-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px -5px rgba(37,99,235,.15); }
+.calc-display { background: #0f172a; color: #60a5fa; font-family: 'Courier New', Courier, monospace; padding: 1rem; border-radius: .5rem; text-align: right; font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; min-height: 50px; }
+.calc-input { width: 100%; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: .375rem; padding: .5rem .75rem; font-size: .875rem; }
+.calc-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 2px rgba(37,99,235,.15); }
         .sidebar.closed{transform:translateX(-100%);}
         .main-content{margin-left:260px;transition:margin-left .3s ease;padding:1.5rem 2rem;}
         .main-content.expanded{margin-left:0;}
@@ -67,6 +73,9 @@
             <button class="nav-btn w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-slate-600 text-sm" data-page="employees"><i data-lucide="users" class="w-[18px] h-[18px]"></i><span>Employees</span></button>
             <button class="nav-btn w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-slate-600 text-sm" data-page="assets"><i data-lucide="monitor" class="w-[18px] h-[18px]"></i><span>Assets</span></button>
             <button class="nav-btn w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-slate-600 text-sm" data-page="charts"><i data-lucide="bar-chart-3" class="w-[18px] h-[18px]"></i><span>Analytics</span></button>
+            <!-- Add these right above the Analytics button -->
+<button class="nav-btn w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-slate-600 text-sm" data-page="warehouse"><i data-lucide="warehouse" class="w-[18px] h-[18px]"></i><span>Warehouse</span></button>
+<button class="nav-btn w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition text-left text-slate-600 text-sm" data-page="calculators"><i data-lucide="calculator" class="w-[18px] h-[18px]"></i><span>Calculators</span></button>
         </nav>
         <div class="mt-6 pt-4 border-t border-slate-200">
             <button id="logoutBtn" class="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-red-50 hover:text-red-600 transition text-left text-slate-600 text-sm"><i data-lucide="log-out" class="w-[18px] h-[18px]"></i><span>Logout</span></button>
@@ -127,7 +136,36 @@
                 <div class="glass p-5 rounded-xl"><h3 class="text-sm font-bold text-slate-800 mb-3">Product Categories</h3><canvas id="dashProdChart" height="220"></canvas></div>
             </div>
         </div>
+<!-- WAREHOUSE & SUPPLY CHAIN -->
+<div id="warehouseSection" class="section">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold text-slate-800">Warehouse & Supply Chain</h2>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Warehouses Subsection -->
+        <div>
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-md font-semibold text-slate-700">Locations</h3>
+                <button onclick="showAddModal('warehouses')" class="flex items-center gap-2 px-3 py-1.5 text-white text-xs font-medium rounded-lg shadow-sm" style="background:var(--blue)"><i data-lucide="plus" class="w-3 h-3"></i>Add</button>
+            </div>
+            <div id="warehousesGrid" class="grid grid-cols-1 gap-4"></div>
+        </div>
+        <!-- Shipments Subsection -->
+        <div>
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-md font-semibold text-slate-700">Shipments</h3>
+                <button onclick="showAddModal('shipments')" class="flex items-center gap-2 px-3 py-1.5 text-white text-xs font-medium rounded-lg shadow-sm" style="background:var(--blue)"><i data-lucide="plus" class="w-3 h-3"></i>Add</button>
+            </div>
+            <div id="shipmentsGrid" class="grid grid-cols-1 gap-4"></div>
+        </div>
+    </div>
+</div>
 
+<!-- BUSINESS CALCULATORS -->
+<div id="calculatorsSection" class="section">
+    <h2 class="text-xl font-bold text-slate-800 mb-4">Business Calculators</h2>
+    <div id="calcGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+</div>
         <!-- PRODUCTS -->
         <div id="productsSection" class="section">
             <div class="flex items-center justify-between mb-4">
@@ -228,6 +266,44 @@ const dataCache = {
 
 // ── Schemas ──
 const schemas = {
+  // Add these inside your schemas object
+warehouses: {
+    table: 'warehouses', label: 'Warehouse', icon: 'warehouse',
+    fields: [
+        { key: 'name', label: 'Warehouse Name', type: 'text', required: true },
+        { key: 'address', label: 'Address', type: 'text' },
+        { key: 'manager', label: 'Manager', type: 'text' },
+        { key: 'capacity', label: 'Capacity (SqFt)', type: 'number', step: '1' },
+        { key: 'current_utilization', label: 'Current Utilization (SqFt)', type: 'number', step: '1' },
+        { key: 'status', label: 'Status', type: 'select', options: ['Active', 'Full', 'Closed', 'Under Maintenance'], required: true }
+    ],
+    cardTitle: r => r.name || 'Unnamed',
+    cardBadge: r => r.status || 'Active',
+    cardFields: r => [
+        ['Address', r.address], ['Manager', r.manager],
+        ['Capacity', r.capacity ? r.capacity + ' SqFt' : null],
+        ['Utilization', r.current_utilization ? r.current_utilization + ' SqFt' : null],
+        ['Usage %', r.capacity && r.current_utilization ? ((r.current_utilization / r.capacity) * 100).toFixed(1) + '%' : null]
+    ]
+},
+shipments: {
+    table: 'shipments', label: 'Shipment', icon: 'truck',
+    fields: [
+        { key: 'tracking_number', label: 'Tracking #', type: 'text', required: true },
+        { key: 'origin', label: 'Origin', type: 'text', required: true },
+        { key: 'destination', label: 'Destination', type: 'text', required: true },
+        { key: 'carrier', label: 'Carrier', type: 'text' },
+        { key: 'estimated_arrival', label: 'ETA', type: 'date' },
+        { key: 'contents', label: 'Contents', type: 'textarea' },
+        { key: 'status', label: 'Status', type: 'select', options: ['Processing', 'In Transit', 'Delivered', 'Delayed', 'Customs Hold'], required: true }
+    ],
+    cardTitle: r => r.tracking_number || 'No Tracking',
+    cardBadge: r => r.status || 'Processing',
+    cardFields: r => [
+        ['Origin', r.origin], ['Destination', r.destination],
+        ['Carrier', r.carrier], ['ETA', r.estimated_arrival], ['Contents', r.contents]
+    ]
+},
     products: {
         table: 'products', label: 'Product', icon: 'package',
         fields: [
@@ -352,8 +428,88 @@ const schemas = {
             ['Condition', r.condition], ['Warranty Exp.', r.warranty_expiry]
         ]
     }
+    
 };
+// ═══════════════════════════════════════════
+// ADVANCED CALCULATORS ENGINE
+// ═══════════════════════════════════════════
+const calculators = [
+    { id: 'profit_margin', name: 'Profit Margin', icon: 'percent', inputs: [{id:'rev', label:'Revenue ($)'}, {id:'cost', label:'Cost ($)'}], calc: (v) => { const p = v.rev - v.cost; return v.rev ? `Margin: ${((p/v.rev)*100).toFixed(2)}% | Profit: $${p.toFixed(2)}` : 'Err'; }},
+    { id: 'markup', name: 'Markup Calculator', icon: 'tag', inputs: [{id:'cost', label:'Cost ($)'}, {id:'rev', label:'Selling Price ($)'}], calc: (v) => v.cost ? `Markup: ${(((v.rev-v.cost)/v.cost)*100).toFixed(2)}%` : 'Err' },
+    { id: 'roi', name: 'ROI Calculator', icon: 'trending-up', inputs: [{id:'gain', label:'Net Gain ($)'}, {id:'cost', label:'Cost of Investment ($)'}], calc: (v) => v.cost ? `ROI: ${((v.gain/v.cost)*100).toFixed(2)}%` : 'Err' },
+    { id: 'breakeven', name: 'Break-Even Point', icon: 'scale', inputs: [{id:'fc', label:'Fixed Costs ($)'}, {id:'price', label:'Price per Unit ($)'}, {id:'vc', label:'Variable Cost per Unit ($)'}], calc: (v) => (v.price - v_vc) > 0 ? `Units to sell: ${Math.ceil(v.fc / (v.price - v.vc))}` : 'Err' },
+    { id: 'cash_runway', name: 'Cash Runway', icon: 'clock', inputs: [{id:'cash', label:'Current Cash ($)'}, {id:'burn', label:'Monthly Burn Rate ($)'}], calc: (v) => v.burn ? `Months left: ${(v.cash / v.burn).toFixed(1)}` : 'Err' },
+    { id: 'compound', name: 'Compound Interest', icon: 'layers', inputs: [{id:'p', label:'Principal ($)'}, {id:'r', label:'Annual Rate (%)'}, {id:'n', label:'Times Compounded/Yr'}, {id:'t', label:'Years'}], calc: (v) => `Total: $${(v.p * Math.pow(1 + (v.r/100)/v.n, v.n * v.t)).toFixed(2)}` },
+    { id: 'loan', name: 'Loan Payment', icon: 'landmark', inputs: [{id:'p', label:'Loan Amount ($)'}, {id:'r', label:'Annual Rate (%)'}, {id:'n', label:'Total Payments (Months)'}], calc: (v) => { const ri = (v.r/100)/12; return ri ? `Monthly: $${(v.p * (ri * Math.pow(1+ri, v.n)) / (Math.pow(1+ri, v.n) - 1)).toFixed(2)}` : 'Err'; }},
+    { id: 'cac', name: 'CAC', icon: 'user-plus', inputs: [{id:'mc', label:'Marketing Cost ($)'}, {id:'nc', label:'New Customers'}], calc: (v) => v.nc ? `Acquisition Cost: $${(v.mc / v.nc).toFixed(2)}` : 'Err' },
+    { id: 'ltv', name: 'Customer LTV', icon: 'heart-handshake', inputs: [{id:'ao', label:'Avg Order Value ($)'}, {id:'pf', label:'Purchase Freq/Yr'}, {id:'cl', label:'Customer Lifespan (Yrs)'}], calc: (v) => `Lifetime Value: $${(v.ao * v.pf * v.cl).toFixed(2)}` },
+    { id: 'depreciation', name: 'Straight-Line Depreciation', icon: 'trending-down', inputs: [{id:'cost', label:'Asset Cost ($)'}, {id:'salvage', label:'Salvage Value ($)'}, {id:'life', label:'Useful Life (Yrs)'}], calc: (v) => v.life ? `Yearly Depreciation: $${((v.cost - v.salvage) / v.life).toFixed(2)}` : 'Err' },
+    { id: 'discount', name: 'Discount Impact', icon: 'badge-percent', inputs: [{id:'price', label:'Original Price ($)'}, {id:'disc', label:'Discount (%)'}], calc: (v) => `New Price: $${(v.price * (1 - v.disc/100)).toFixed(2)} | Saved: $${(v.price * (v.disc/100)).toFixed(2)}` },
+    { id: 'gst_vat', name: 'GST/VAT Calculator', icon: 'receipt', inputs: [{id:'amount', label:'Amount ($)'}, {id:'rate', label:'Tax Rate (%)'}], calc: (v) => `Tax: $${(v.amount * (v.rate/100)).toFixed(2)} | Total: $${(v.amount * (1 + v.rate/100)).toFixed(2)}` }
+];
 
+function renderCalculators() {
+    const grid = document.getElementById('calcGrid');
+    if (!grid) return;
+    
+    let html = '';
+    calculators.forEach(c => {
+        let inputsHtml = '';
+        c.inputs.forEach(inp => {
+            inputsHtml += `<div class="mb-2"><label class="field-label block mb-1">${inp.label}</label><input type="number" class="calc-input" data-calc-id="${c.id}" data-input-id="${inp.id}" placeholder="0" step="any"></div>`;
+        });
+
+        html += `
+        <div class="glass p-5 rounded-xl calc-card" data-calc-card="${c.id}">
+            <div class="flex items-center gap-2 mb-4">
+                <div class="stat-icon" style="background:#dbeafe"><i data-lucide="${c.icon}" class="w-5 h-5" style="color:var(--blue)"></i></div>
+                <h4 class="font-bold text-slate-800 text-sm">${c.name}</h4>
+            </div>
+            <div class="calc-display" id="display-${c.id}">0</div>
+            <div class="space-y-1">${inputsHtml}</div>
+        </div>`;
+    });
+
+    grid.innerHTML = html;
+    lucide.createIcons();
+
+    // Attach live calculation listeners
+    grid.querySelectorAll('.calc-input').forEach(input => {
+        input.addEventListener('input', () => {
+            const calcId = input.getAttribute('data-calc-id');
+            const calcObj = calculators.find(c => c.id === calcId);
+            const vals = {};
+            
+            grid.querySelectorAll(`[data-calc-id="${calcId}"]`).forEach(inp => {
+                vals[inp.getAttribute('data-input-id')] = parseFloat(inp.value) || 0;
+            });
+
+            const display = document.getElementById(`display-${calcId}`);
+            try {
+                display.textContent = calcObj.calc(vals);
+            } catch(e) {
+                display.textContent = 'Error';
+            }
+        });
+    });
+}
+
+// Hook calculators into navigation
+const origInitNav = initNavigation; // preserve original
+function initNavigation() {
+    origInitNav();
+    
+    // Specific listener for calculators page
+    document.querySelector('[data-page="calculators"]').addEventListener('click', () => {
+        renderCalculators();
+    });
+    
+    // Specific listener for warehouse page to load both grids
+    document.querySelector('[data-page="warehouse"]').addEventListener('click', async () => {
+        await loadData('warehouses');
+        await loadData('shipments');
+    });
+}
 // ── Toast ──
 function showToast(msg, type) {
     type = type || 'success';
@@ -898,6 +1054,97 @@ if (document.readyState === 'loading') {
 } else {
     boot();
 }
+// ============================================
+// PAUI CONFIG
+// ============================================
+const PAUI_CONFIG = {
+    ssn: 'nte',
+    lsn: 'Epsilon nte',
+    pnb: [],                           // Premium nav buttons — add your premium pages here later
+    npnb: [                            // Non-premium nav buttons — all current pages
+        'dashboard',
+        'products',
+        'expenses',
+        'services',
+        'employees',
+        'assets',
+        'charts'
+    ],
+};
+// ============================================
+// PAUI CORE — don't touch below
+// ============================================
+
+// Resolve a nav element by id first, then by data-page attribute
+function pauiResolveNavEl(value) {
+    const byId = document.getElementById(value);
+    if (byId) return byId;
+
+    const byDataPage = document.querySelector(`[data-page="${value}"]`);
+    if (byDataPage) return byDataPage;
+
+    console.warn(`PAUI: nav element "${value}" not found by id or data-page`);
+    return null;
+}
+
+// Show nav buttons (accepts array of ids or data-page values)
+function showNavBtn(btns) {
+    btns.forEach(val => {
+        const el = pauiResolveNavEl(val);
+        if (el) el.style.display = '';
+    });
+}
+
+// Hide nav buttons (accepts array of ids or data-page values)
+function hideNavBtn(btns) {
+    btns.forEach(val => {
+        const el = pauiResolveNavEl(val);
+        if (el) el.style.display = 'none';
+    });
+}
+
+// Load premium status from Supabase and toggle nav visibility
+async function pauiLoadAccess() {
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+
+    if (!user || authError) {
+        hideNavBtn(PAUI_CONFIG.pnb);
+        showNavBtn(PAUI_CONFIG.npnb);
+        return false;
+    }
+
+    const columnName = `paui_${PAUI_CONFIG.ssn}`;
+
+    const { data, error } = await supabaseClient
+        .from('profiles')
+        .select(columnName)
+        .eq('id', user.id)
+        .single();
+
+    if (error || !data) {
+        console.error('PAUI: error fetching premium status', error);
+        hideNavBtn(PAUI_CONFIG.pnb);
+        showNavBtn(PAUI_CONFIG.npnb);
+        return false;
+    }
+
+    const isPremium = data[columnName];
+
+    if (isPremium === true) {
+        showNavBtn(PAUI_CONFIG.pnb);
+        showNavBtn(PAUI_CONFIG.npnb);
+    } else {
+        hideNavBtn(PAUI_CONFIG.pnb);
+        showNavBtn(PAUI_CONFIG.npnb);
+    }
+
+    return isPremium;
+}
+
+// ============================================
+// INIT
+// ============================================
+pauiLoadAccess();
 </script>
 <!--
 ╔══════════════════════════════════════════════════════════════╗
@@ -1017,5 +1264,41 @@ CREATE POLICY "Users can insert own assets" ON assets FOR INSERT WITH CHECK (aut
 CREATE POLICY "Users can update own assets" ON assets FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own assets" ON assets FOR DELETE USING (auth.uid() = user_id);
 -->
+<script>
+(function() {
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // ── WAREHOUSE LOADER ──
+        const warehouseBtn = document.querySelector('[data-page="warehouse"]');
+        if (warehouseBtn) {
+            warehouseBtn.addEventListener('click', async function() {
+                // Small delay to let your core JS switch the active section first
+                setTimeout(async () => {
+                    const section = document.getElementById('warehouseSection');
+                    if (section && section.classList.contains('active')) {
+                        // Load both grids simultaneously
+                        await loadData('warehouses');
+                        await loadData('shipments');
+                    }
+                }, 50);
+            });
+        }
+
+        // ── CALCULATORS LOADER ──
+        const calcBtn = document.querySelector('[data-page="calculators"]');
+        if (calcBtn) {
+            calcBtn.addEventListener('click', function() {
+                setTimeout(() => {
+                    const section = document.getElementById('calculatorsSection');
+                    if (section && section.classList.contains('active')) {
+                        renderCalculators();
+                    }
+                }, 50);
+            });
+        }
+
+    });
+})();
+</script>
 </body>
 </html>
